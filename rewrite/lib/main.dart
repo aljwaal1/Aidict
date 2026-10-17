@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
+import 'extra_features.dart';
+import 'package:flutter/services.dart';
 
 void main() => runApp(const AidictApp());
 class AidictApp extends StatefulWidget {
@@ -29,6 +31,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   final input=TextEditingController();
   final manager=OnDeviceTranslatorModelManager();
   bool offline=true, busy=false;
+  String dictionaryQuery='';
   String source='ar',target='en',output='',message='';
   Future<void> download() async {
     if(busy)return;
@@ -71,7 +74,10 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     try {
       final text=input.text.trim();
       final result=offline?await local(text):await online(text);
-      if(mounted)setState(()=>output=result);
+      if(mounted){
+        setState(()=>output=result);
+        await SavedTranslations.add('$source → $target | $text | $result');
+      }
     } catch(e) {
       if(mounted)setState(()=>message='$e');
     } finally {if(mounted)setState(()=>busy=false);}
@@ -120,7 +126,27 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         if(busy)const LinearProgressIndicator(),
         if(message.isNotEmpty)Text(message),
         if(output.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(16),
-          child:SelectableText(output))),
+          child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+            SelectableText(output),
+            Wrap(children:[
+              IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
+              IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
+            ]),
+          ]))),
+        const Divider(),
+        Wrap(spacing:8,children:[
+          OutlinedButton.icon(onPressed:() async {
+            final clip=await Clipboard.getData(Clipboard.kTextPlain);
+            if(clip?.text!=null)input.text=clip!.text!;
+          },icon:const Icon(Icons.paste),label:const Text('لصق')),
+          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const TranslationLibraryPage(favorites:false))),child:const Text('السجل')),
+          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const TranslationLibraryPage(favorites:true))),child:const Text('المفضلة')),
+          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
+        ]),
+        ExpansionTile(title:const Text('قاموس عربي–إنجليزي'),children:[
+          TextField(onChanged:(v)=>setState(()=>dictionaryQuery=v),decoration:const InputDecoration(hintText:'ابحث عن كلمة',border:OutlineInputBorder())),
+          if(dictionaryQuery.trim().isNotEmpty)Padding(padding:const EdgeInsets.all(12),child:Text(findWord(dictionaryQuery)??'لم تُعثر على الكلمة في القاموس المصغر')),
+        ]),
       ]));
   }
 }
