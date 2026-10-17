@@ -60,6 +60,8 @@ jobs:
           assert 'minSdk = 23' in f, 'Minimum SDK must be 23'
           PY
           python3 tools/validate_project.py
+      - name: Static architecture regression checks
+        run: python3 tools/architecture_guard.py
       - name: Resolve dependencies
         run: flutter pub get
       - name: Show environment and dependency diagnostics
