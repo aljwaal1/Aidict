@@ -22,6 +22,8 @@ jobs:
       - name: Create Android scaffold
         run: |
           flutter create --platforms android --org com.explapp --project-name ai_translator .
+          # Flutter's sample widget test targets MyApp; Aidict uses AidictApp.
+          rm -f test/widget_test.dart
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
