@@ -58,6 +58,8 @@ jobs:
           flutter doctor -v
           flutter pub deps || true
       - name: Analyze
+        id: analyze
+        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
@@ -75,9 +77,19 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Test
-        run: flutter test
+        id: tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter test 2>&1 | tee flutter-test.log
       - name: Build debug APK
-        run: flutter build apk --debug
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --debug 2>&1 | tee flutter-build.log
       - name: Upload diagnostic logs
         if: failure()
         uses: actions/upload-artifact@v4
@@ -85,11 +97,35 @@ jobs:
           name: Aidict-build-diagnostics
           path: |
             flutter-analyze.log
+            flutter-test.log
+            flutter-build.log
             pubspec.lock
             android/app/build.gradle.kts
             android/app/src/main/AndroidManifest.xml
           if-no-files-found: ignore
+      - name: Assert quality gates
+        if: always()
+        env:
+          ANALYZE_RESULT: ${{ steps.analyze.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+        run: |
+          echo "Analyze: $ANALYZE_RESULT"
+          echo "Test: $TEST_RESULT"
+          echo "Build: $BUILD_RESULT"
+          {
+            echo "## Flutter quality gates"
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Analyze | $ANALYZE_RESULT |"
+            echo "| Test | $TEST_RESULT |"
+            echo "| Build APK | $BUILD_RESULT |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$ANALYZE_RESULT" = success &&
+          test "$TEST_RESULT" = success &&
+          test "$BUILD_RESULT" = success
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Aidict-debug-apk
