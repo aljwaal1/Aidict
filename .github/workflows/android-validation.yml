@@ -22,6 +22,20 @@ jobs:
       - name: Create Android scaffold
         run: |
           flutter create --platforms android --org com.explapp --project-name ai_translator .
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          ET.register_namespace('android','http://schemas.android.com/apk/res/android')
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          ns = '{http://schemas.android.com/apk/res/android}'
+          if not any(e.get(ns+'name') == 'android.permission.INTERNET' for e in root.findall('uses-permission')):
+              root.insert(0, ET.Element('uses-permission', {ns+'name':'android.permission.INTERNET'}))
+          tree.write(manifest, encoding='unicode', xml_declaration=True)
+          gradle = Path('android/app/build.gradle.kts')
+          gradle.write_text(gradle.read_text().replace('minSdk = flutter.minSdkVersion','minSdk = 23'))
+          PY
           python3 tools/validate_project.py
       - name: Resolve dependencies
         run: flutter pub get
