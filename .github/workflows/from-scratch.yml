@@ -34,14 +34,14 @@ jobs:
           c = p.read_text().replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36').replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
           p.write_text(c)
           assert 'compileSdk = 36' in c and 'minSdk = 23' in c
-          import xml.etree.ElementTree as ET
           manifest = Path('android/app/src/main/AndroidManifest.xml')
-          tree = ET.parse(manifest)
-          root = tree.getroot()
-          ns = '{http://schemas.android.com/apk/res/android}'
-          if not any(x.get(ns+'name') == 'android.permission.INTERNET' for x in root.findall('uses-permission')):
-              root.insert(0, ET.Element('uses-permission', {ns+'name':'android.permission.INTERNET'}))
-          tree.write(manifest, encoding='unicode', xml_declaration=True)
+          xml = manifest.read_text()
+          permission = '<uses-permission android:name="android.permission.INTERNET" />'
+          if permission not in xml:
+              xml = xml.replace('<application', permission + '\\n    <application', 1)
+          manifest.write_text(xml)
+          assert 'android:name="flutterEmbedding"' in xml
+          assert 'android:value="2"' in xml
           PY
       - name: Resolve
         run: flutter pub get
