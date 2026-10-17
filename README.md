@@ -27,3 +27,7 @@ Stage 0 remains **unverified** until build and device tests pass. Debug APK is n
 ## Screenshot/camera OCR progress
 
 Camera capture and importing an image/screenshot now extract **Latin-script text** with ML Kit and fill the translation field. This does not yet perform live camera overlay translation and does not recognize Arabic script. The feature has not passed device QA.
+
+## Development update — voice conversation
+
+Added a basic alternating two-speaker voice conversation screen using speech_to_text, an online text translation endpoint and flutter_tts. Requires RECORD_AUDIO permission and compatible speech/TTS services. Speech recognition may require a network connection depending on the Android device; do not describe it as offline. It does not yet support simultaneous speakers, streaming translation, audio file translation, or an overlay-camera interface. Android CI and real-device QA remain unverified.
