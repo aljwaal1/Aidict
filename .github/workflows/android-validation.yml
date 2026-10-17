@@ -62,6 +62,18 @@ jobs:
         run: |
           set -o pipefail
           flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze.log
+      - name: Write analyzer errors to job summary
+        if: failure()
+        shell: bash
+        run: |
+          if [ -f flutter-analyze.log ]; then
+            {
+              echo "## Flutter Analyze errors"
+              echo '~~~text'
+              grep -E '(^| )(error|warning) •|error:|Error:' flutter-analyze.log | head -80 || tail -80 flutter-analyze.log
+              echo '~~~'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Test
         run: flutter test
       - name: Build debug APK
