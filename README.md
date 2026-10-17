@@ -13,7 +13,7 @@ Flutter Android application for translation with **Arabic ↔ English only offli
 
 ## Limitations
 
-The online MyMemory translation endpoint is public/demo-grade with availability and usage limits. It is not a paid production translation backend. Camera/OCR, live conversation, audio recordings, PDF/DOCX, advanced dictionary, AI rewriting and learning quizzes are **not yet present in the committed version**. Do not claim they work. The earlier standalone ZIP includes preliminary work but was not the basis of validated APK.
+The online MyMemory translation endpoint is public/demo-grade with availability and usage limits. It is not a paid production translation backend. Live camera overlay translation, Arabic OCR, live conversation, audio recordings, PDF/DOCX, advanced dictionary, AI rewriting and learning quizzes are **not yet present in the committed version**. Do not claim they work. The earlier standalone ZIP includes preliminary work but was not the basis of validated APK.
 
 ## Build
 
@@ -23,3 +23,7 @@ The online MyMemory translation endpoint is public/demo-grade with availability 
 4. Install and test on real Android phone, including airplane-mode Arabic ↔ English translation **after** downloading both models.
 
 Stage 0 remains **unverified** until build and device tests pass. Debug APK is not a Play Store production release; production requires signing and further QA.
+
+## Screenshot/camera OCR progress
+
+Camera capture and importing an image/screenshot now extract **Latin-script text** with ML Kit and fill the translation field. This does not yet perform live camera overlay translation and does not recognize Arabic script. The feature has not passed device QA.
