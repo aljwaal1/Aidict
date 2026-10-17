@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  issues: write
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -103,6 +104,36 @@ jobs:
             android/app/build.gradle.kts
             android/app/src/main/AndroidManifest.xml
           if-no-files-found: ignore
+      - name: Create actionable failure report
+        if: ${{ always() && (steps.analyze.outcome == 'failure' || steps.tests.outcome == 'failure' || steps.build.outcome == 'failure') }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANALYZE_RESULT: ${{ steps.analyze.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          lines = [
+              '# Aidict CI diagnostics',
+              f"Run: https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+              f"Commit: {os.environ['GITHUB_SHA']}",
+              f"Analyze: {os.environ['ANALYZE_RESULT']}; Test: {os.environ['TEST_RESULT']}; Build: {os.environ['BUILD_RESULT']}",
+          ]
+          for filename in ('flutter-analyze.log','flutter-test.log','flutter-build.log'):
+              file = Path(filename)
+              if not file.exists():
+                  continue
+              text = file.read_text(errors='replace').splitlines()
+              selected = [v for v in text if ('error •' in v or 'Error:' in v or 'FAIL' in v or 'Exception' in v)]
+              excerpt = (selected or text[-80:])[:100]
+              lines.extend(['', f'## {filename}', '```text', *excerpt, '```'])
+          Path('ci-failure-report.md').write_text('\n'.join(lines))
+          PY
+          gh issue create --title "CI failure: run ${GITHUB_RUN_ID}" --body-file ci-failure-report.md
       - name: Assert quality gates
         if: always()
         env:
