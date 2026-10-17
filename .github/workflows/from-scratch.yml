@@ -1,0 +1,48 @@
+name: Aidict clean rewrite APK
+on:
+  push:
+    branches: [rewrite/from-scratch]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: rewrite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Create Android
+        run: flutter create --no-pub --platforms android --org com.explapp --project-name aidict .
+      - name: Configure Android
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle.kts')
+          c = p.read_text().replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36').replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
+          p.write_text(c)
+          assert 'compileSdk = 36' in c and 'minSdk = 23' in c
+          PY
+      - name: Resolve
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+      - name: Test
+        run: flutter test
+      - name: Build APK
+        run: flutter build apk --debug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aidict-From-Scratch-Debug-APK
+          path: rewrite/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
