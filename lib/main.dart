@@ -9,6 +9,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'translation_policy.dart';
 import 'vocabulary_data.dart';
 import 'learning_page.dart';
+import 'voice_conversation_page.dart';
 
 void main() { WidgetsFlutterBinding.ensureInitialized(); runApp(const AidictApp()); }
 
@@ -109,10 +110,10 @@ class _TranslationPageState extends State<TranslationPage> {
     finally { await translator.close(); }
   }
 
-  Future<String> _translateOnline(String text) async {
+  Future<String> _translateOnline(String text, {String? fromCode, String? toCode}) async {
     if (text.length > 450) throw StateError('الترجمة المتصلة التجريبية محدودة بـ450 حرفًا');
     final uri = Uri.https('api.mymemory.translated.net', '/get',
-        {'q': text, 'langpair': '$source|$target'});
+        {'q': text, 'langpair': '${fromCode ?? source}|${toCode ?? target}'});
     final response = await http.get(uri).timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) throw StateError('خدمة الترجمة غير متاحة');
     final data = jsonDecode(response.body) as Map<String, dynamic>;
