@@ -9,7 +9,7 @@ class DocumentTextReader {
   static const int maxCharacters = 40000;
 
   static Future<String?> selectAndExtract() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['pdf', 'docx', 'txt'],
       withData: true,
