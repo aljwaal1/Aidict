@@ -41,7 +41,11 @@ class DocumentTextReader {
         if (documentXml == null) {
           throw const FormatException('الملف ليس مستند DOCX صالحًا');
         }
-        final xml = XmlDocument.parse(utf8.decode(documentXml.readBytes()));
+        final xmlBytes = documentXml.readBytes();
+        if (xmlBytes == null) {
+          throw const FormatException('تعذرت قراءة محتوى ملف Word');
+        }
+        final xml = XmlDocument.parse(utf8.decode(xmlBytes));
         final paragraphs = xml.descendants
             .whereType<XmlElement>()
             .where((element) => element.name.local == 'p');
