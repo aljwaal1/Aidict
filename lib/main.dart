@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'translation_policy.dart';
 import 'vocabulary_data.dart';
 import 'learning_page.dart';
@@ -122,6 +124,28 @@ class _TranslationPageState extends State<TranslationPage> {
     return value.replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&amp;', '&');
   }
 
+  Future<void> _recognizeImage(ImageSource origin) async {
+    if (busy) return;
+    try {
+      final selected = await ImagePicker().pickImage(source: origin);
+      if (selected == null) return;
+      setState(() => busy = true);
+      final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      try {
+        final recognized = await recognizer.processImage(InputImage.fromFilePath(selected.path));
+        if (!mounted) return;
+        if (recognized.text.trim().isEmpty) {
+          _message('لم يُستخرج نص. التعرف العربي يحتاج محرك OCR إضافيًا.');
+        } else {
+          setState(() { input.text = recognized.text; result = ''; });
+          _message('تم استخراج النص. راجعه ثم اضغط ترجمة.');
+        }
+      } finally { await recognizer.close(); }
+    } catch (e) {
+      _message('تعذر قراءة الصورة: $e');
+    } finally { if (mounted) setState(() => busy = false); }
+  }
+
   Future<void> _translate() async {
     final value = input.text.trim();
     if (busy || value.isEmpty) return;
@@ -215,6 +239,13 @@ class _TranslationPageState extends State<TranslationPage> {
       TextField(controller: input, maxLines: 5, minLines: 3,
         decoration: const InputDecoration(labelText: 'النص المراد ترجمته',
           border: OutlineInputBorder())),
+      const SizedBox(height: 10),
+      Wrap(spacing: 8, children: [
+        OutlinedButton.icon(onPressed: busy ? null : () => _recognizeImage(ImageSource.camera),
+          icon: const Icon(Icons.camera_alt_outlined), label: const Text('التقاط نص')),
+        OutlinedButton.icon(onPressed: busy ? null : () => _recognizeImage(ImageSource.gallery),
+          icon: const Icon(Icons.image_outlined), label: const Text('صورة أو لقطة شاشة')),
+      ]),
       const SizedBox(height: 12),
       Row(children: [
         Expanded(child: FilledButton.icon(onPressed: busy ? null : _translate,
@@ -271,7 +302,7 @@ class _TranslationPageState extends State<TranslationPage> {
           Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (_) => const LearningPage()))),
       const SizedBox(height: 25),
-      const Text('وظائف الكاميرا المباشرة، الصوت، المستندات، القاموس والتعلم قيد التطوير والاختبار.',
+      const Text('الكاميرا المباشرة مع ترجمة فوق المشهد، والتسجيلات الصوتية والمستندات والتصحيح الذكي قيد التطوير. OCR الحالي للنص اللاتيني فقط.',
         textAlign: TextAlign.center),
     ]),
   );
