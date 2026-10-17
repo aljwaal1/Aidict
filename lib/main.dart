@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'translation_policy.dart';
+import 'vocabulary_data.dart';
+import 'learning_page.dart';
 
 void main() { WidgetsFlutterBinding.ensureInitialized(); runApp(const AidictApp()); }
 
@@ -41,6 +43,8 @@ class TranslationPage extends StatefulWidget {
 
 class _TranslationPageState extends State<TranslationPage> {
   final input = TextEditingController();
+  final dictionaryInput = TextEditingController();
+  String dictionaryAnswer = '';
   final manager = OnDeviceTranslatorModelManager();
   bool offline = true, busy = false;
   String source = 'ar', target = 'en', result = '', status = '';
@@ -177,7 +181,7 @@ class _TranslationPageState extends State<TranslationPage> {
     ));
   }
 
-  @override void dispose() { input.dispose(); super.dispose(); }
+  @override void dispose() { input.dispose(); dictionaryInput.dispose(); super.dispose(); }
 
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Aidict • AI Translator'), actions: [
@@ -249,6 +253,23 @@ class _TranslationPageState extends State<TranslationPage> {
               setState(() => favorites.remove(item)); await _save();
             })),
       ]),
+      const SizedBox(height: 20),
+      ExpansionTile(title: const Text('القاموس العربي–الإنجليزي'), children: [
+        TextField(controller: dictionaryInput, decoration: const InputDecoration(
+          hintText: 'اكتب كلمة عربية أو إنجليزية', border: OutlineInputBorder())),
+        const SizedBox(height: 8),
+        FilledButton(onPressed: () => setState(() {
+          dictionaryAnswer = lookupWord(dictionaryInput.text) ??
+            lookupWord(dictionaryInput.text, arabicToEnglish: true) ??
+            'الكلمة غير موجودة في القاموس المحلي المصغر';
+        }), child: const Text('بحث')),
+        if (dictionaryAnswer.isNotEmpty) SelectableText(dictionaryAnswer),
+      ]),
+      ListTile(title: const Text('تعلم الكلمات والاختبارات'),
+        subtitle: const Text('20 كلمة أساسية واختبار إجابات'),
+        trailing: const Icon(Icons.chevron_left), onTap: () =>
+          Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => const LearningPage()))),
       const SizedBox(height: 25),
       const Text('وظائف الكاميرا المباشرة، الصوت، المستندات، القاموس والتعلم قيد التطوير والاختبار.',
         textAlign: TextAlign.center),
