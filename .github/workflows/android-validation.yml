@@ -33,7 +33,7 @@ jobs:
           tree = ET.parse(manifest)
           root = tree.getroot()
           ns = '{http://schemas.android.com/apk/res/android}'
-          for permission in ['android.permission.INTERNET', 'android.permission.RECORD_AUDIO']:
+          for permission in ['android.permission.INTERNET', 'android.permission.RECORD_AUDIO', 'android.permission.CAMERA']:
               if not any(e.get(ns+'name') == permission for e in root.findall('uses-permission')):
                   root.insert(0, ET.Element('uses-permission', {ns+'name':permission}))
           app = root.find('application')
@@ -64,6 +64,10 @@ jobs:
         run: python3 tools/architecture_guard.py
       - name: Resolve dependencies
         run: flutter pub get
+      - name: Verify dependency APIs
+        run: |
+          python3 tools/architecture_guard.py
+          flutter pub deps --style=compact | grep -E 'file_picker|flutter_tts|google_mlkit_translation'
       - name: Show environment and dependency diagnostics
         if: failure()
         run: |
