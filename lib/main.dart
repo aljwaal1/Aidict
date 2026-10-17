@@ -10,6 +10,7 @@ import 'translation_policy.dart';
 import 'vocabulary_data.dart';
 import 'learning_page.dart';
 import 'voice_conversation_page.dart';
+import 'document_text_reader.dart';
 
 void main() { WidgetsFlutterBinding.ensureInitialized(); runApp(const AidictApp()); }
 
@@ -147,6 +148,21 @@ class _TranslationPageState extends State<TranslationPage> {
     } finally { if (mounted) setState(() => busy = false); }
   }
 
+  Future<void> _importDocument() async {
+    if (busy) return;
+    setState(() { busy = true; status = ''; });
+    try {
+      final extracted = await DocumentTextReader.selectAndExtract();
+      if (extracted == null || !mounted) return;
+      setState(() { input.text = extracted; result = ''; });
+      _message('تم استخراج النص. خدمة الترجمة الحالية تقبل نصوصًا قصيرة فقط؛ اختر مقطعًا للترجمة.');
+    } catch (e) {
+      _message('تعذر استخراج المستند: $e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> _translate() async {
     final value = input.text.trim();
     if (busy || value.isEmpty) return;
@@ -242,6 +258,9 @@ class _TranslationPageState extends State<TranslationPage> {
           border: OutlineInputBorder())),
       const SizedBox(height: 10),
       Wrap(spacing: 8, children: [
+        OutlinedButton.icon(onPressed: busy ? null : _importDocument,
+          icon: const Icon(Icons.description_outlined),
+          label: const Text('استيراد PDF / Word / TXT')),
         OutlinedButton.icon(onPressed: busy ? null : () => _recognizeImage(ImageSource.camera),
           icon: const Icon(Icons.camera_alt_outlined), label: const Text('التقاط نص')),
         OutlinedButton.icon(onPressed: busy ? null : () => _recognizeImage(ImageSource.gallery),
