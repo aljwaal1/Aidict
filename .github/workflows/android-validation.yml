@@ -21,7 +21,7 @@ jobs:
           cache: true
       - name: Create Android scaffold
         run: |
-          flutter create --platforms android --org com.explapp --project-name ai_translator .
+          flutter create --no-pub --platforms android --org com.explapp --project-name ai_translator .
           # Flutter's sample widget test targets MyApp; Aidict uses AidictApp.
           rm -f test/widget_test.dart
           python3 - <<'PY'
@@ -51,12 +51,28 @@ jobs:
           python3 tools/validate_project.py
       - name: Resolve dependencies
         run: flutter pub get
+      - name: Show environment and dependency diagnostics
+        if: failure()
+        run: |
+          flutter --version
+          flutter doctor -v
+          flutter pub deps || true
       - name: Analyze
         run: flutter analyze --no-fatal-infos
       - name: Test
         run: flutter test
       - name: Build debug APK
         run: flutter build apk --debug
+      - name: Upload diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aidict-build-diagnostics
+          path: |
+            pubspec.lock
+            android/app/build.gradle.kts
+            android/app/src/main/AndroidManifest.xml
+          if-no-files-found: ignore
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
