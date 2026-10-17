@@ -17,7 +17,10 @@ class _LearningPageState extends State<LearningPage> {
     final correct = entries[i].value;
     final other = entries.where((e) => e.key != entries[i].key)
       .skip((i * 3) % (entries.length - 4)).take(3).map((e) => e.value).toList();
-    return [correct, ...other]..sort((a,b) => (a.length + i * 7) % 11 - ((b.length + i * 7) % 11));
+    final choices = <String>[correct, ...other];
+    // Deterministic rotation produces stable answer buttons for each question.
+    final offset = i % choices.length;
+    return [...choices.skip(offset), ...choices.take(offset)];
   }
   @override Widget build(BuildContext context) {
     final done = index >= entries.length;
