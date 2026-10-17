@@ -12,7 +12,7 @@ dependencies:
   shared_preferences: ^2.5.2
   image_picker: ^1.1.2
   google_mlkit_text_recognition: ^0.15.0
-  file_picker: ^11.0.3
+  file_selector: ^1.1.0
   syncfusion_flutter_pdf: ^34.2.7
   archive: ^4.5.2
   xml: ^7.0.1
