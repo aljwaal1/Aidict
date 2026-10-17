@@ -65,7 +65,7 @@ jobs:
           set -o pipefail
           flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze.log
       - name: Write analyzer errors to job summary
-        if: failure()
+        if: always()
         shell: bash
         run: |
           if [ -f flutter-analyze.log ]; then
@@ -91,7 +91,7 @@ jobs:
           set -o pipefail
           flutter build apk --debug 2>&1 | tee flutter-build.log
       - name: Upload diagnostic logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Aidict-build-diagnostics
