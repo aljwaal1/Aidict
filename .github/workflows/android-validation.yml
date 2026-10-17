@@ -58,7 +58,10 @@ jobs:
           flutter doctor -v
           flutter pub deps || true
       - name: Analyze
-        run: flutter analyze --no-fatal-infos
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze.log
       - name: Test
         run: flutter test
       - name: Build debug APK
@@ -69,6 +72,7 @@ jobs:
         with:
           name: Aidict-build-diagnostics
           path: |
+            flutter-analyze.log
             pubspec.lock
             android/app/build.gradle.kts
             android/app/src/main/AndroidManifest.xml
