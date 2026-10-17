@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  issues: write
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -54,6 +55,14 @@ jobs:
         run: |
           test -s build/app/outputs/flutter-apk/app-debug.apk
           sha256sum build/app/outputs/flutter-apk/app-debug.apk
+      - name: Report build failure
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf 'Clean rebuild failed. Inspect the exact failed job at: https://github.com/%s/actions/runs/%s\nCommit: %s\n' "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_SHA" > rewrite-failure.txt
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "Clean rewrite build failed: $GITHUB_RUN_ID" --body-file rewrite-failure.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
