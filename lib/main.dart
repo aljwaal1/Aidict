@@ -206,7 +206,7 @@ class _TranslationPageState extends State<TranslationPage> {
     final options = offline ? const ['ar', 'en'] : languageNames.keys.toList();
     final selected = isSource ? source : target;
     return Expanded(child: DropdownButtonFormField<String>(
-      value: selected, isExpanded: true,
+      initialValue: selected, isExpanded: true,
       decoration: InputDecoration(border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14))),
       items: options.map((code) => DropdownMenuItem(
