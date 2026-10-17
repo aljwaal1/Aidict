@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
 import 'extra_features.dart';
+import 'image_text_reader.dart';
+import 'document_text_reader.dart';
 import 'package:flutter/services.dart';
 
 void main() => runApp(const AidictApp());
@@ -82,6 +84,34 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       if(mounted)setState(()=>message='$e');
     } finally {if(mounted)setState(()=>busy=false);}
   }
+  Future<void> importImage(bool camera) async {
+    if(busy)return;
+    setState((){busy=true;message='';});
+    try {
+      final text=await ImageTextReader.selectAndExtract(camera:camera);
+      if(text!=null&&mounted)setState((){
+        input.text=text;
+        output='';
+        message='تم استخراج النص من الصورة. اضغط ترجمة.';
+      });
+    } catch(e) {
+      if(mounted)setState(()=>message='تعذر استخراج النص: $e');
+    } finally {if(mounted)setState(()=>busy=false);}
+  }
+  Future<void> importDocument() async {
+    if(busy)return;
+    setState((){busy=true;message='';});
+    try {
+      final text=await DocumentTextReader.selectAndExtract();
+      if(text!=null&&mounted)setState((){
+        input.text=text;
+        output='';
+        message='تم استخراج النص من المستند. اضغط ترجمة.';
+      });
+    } catch(e) {
+      if(mounted)setState(()=>message='تعذر قراءة المستند: $e');
+    } finally {if(mounted)setState(()=>busy=false);}
+  }
   @override void dispose(){input.dispose();super.dispose();}
   @override Widget build(BuildContext context) {
     final languages=offline?const ['ar','en']:const ['ar','en','sv','fr','de','es','tr'];
@@ -121,6 +151,15 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         const SizedBox(height:16),
         TextField(controller:input,minLines:3,maxLines:6,
           decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'النص')),
+        const SizedBox(height:12),
+        Wrap(spacing:8,runSpacing:4,children:[
+          OutlinedButton.icon(onPressed:busy?null:()=>importImage(true),
+            icon:const Icon(Icons.camera_alt_outlined),label:const Text('الكاميرا')),
+          OutlinedButton.icon(onPressed:busy?null:()=>importImage(false),
+            icon:const Icon(Icons.photo_library_outlined),label:const Text('صورة')),
+          OutlinedButton.icon(onPressed:busy?null:importDocument,
+            icon:const Icon(Icons.description_outlined),label:const Text('PDF / Word / TXT')),
+        ]),
         const SizedBox(height:12),
         FilledButton(onPressed:busy?null:translate,child:const Text('ترجمة')),
         if(busy)const LinearProgressIndicator(),
