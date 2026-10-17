@@ -30,8 +30,18 @@ jobs:
           tree = ET.parse(manifest)
           root = tree.getroot()
           ns = '{http://schemas.android.com/apk/res/android}'
-          if not any(e.get(ns+'name') == 'android.permission.INTERNET' for e in root.findall('uses-permission')):
-              root.insert(0, ET.Element('uses-permission', {ns+'name':'android.permission.INTERNET'}))
+          for permission in ['android.permission.INTERNET', 'android.permission.RECORD_AUDIO']:
+              if not any(e.get(ns+'name') == permission for e in root.findall('uses-permission')):
+                  root.insert(0, ET.Element('uses-permission', {ns+'name':permission}))
+          app = root.find('application')
+          queries = root.find('queries')
+          if queries is None:
+              queries = ET.Element('queries')
+              root.insert(0, queries)
+          recognition = ET.SubElement(queries, 'intent')
+          ET.SubElement(recognition, 'action', {ns+'name':'android.speech.RecognitionService'})
+          tts = ET.SubElement(queries, 'intent')
+          ET.SubElement(tts, 'action', {ns+'name':'android.intent.action.TTS_SERVICE'})
           tree.write(manifest, encoding='unicode', xml_declaration=True)
           gradle = Path('android/app/build.gradle.kts')
           gradle.write_text(gradle.read_text().replace('minSdk = flutter.minSdkVersion','minSdk = 23'))
