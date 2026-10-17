@@ -321,6 +321,17 @@ class _TranslationPageState extends State<TranslationPage> {
         trailing: const Icon(Icons.chevron_left), onTap: () =>
           Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (_) => const LearningPage()))),
+      ListTile(
+        title: const Text('محادثة صوتية بين شخصين'),
+        subtitle: const Text('تحويل الكلام إلى نص وترجمته ونطقه عبر الإنترنت'),
+        leading: const Icon(Icons.record_voice_over),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => VoiceConversationPage(
+            translate: (text, from, to) =>
+                _translateOnline(text, fromCode: from, toCode: to),
+          ),
+        )),
+      ),
       const SizedBox(height: 25),
       const Text('الكاميرا المباشرة مع ترجمة فوق المشهد، والتسجيلات الصوتية والمستندات والتصحيح الذكي قيد التطوير. OCR الحالي للنص اللاتيني فقط.',
         textAlign: TextAlign.center),
