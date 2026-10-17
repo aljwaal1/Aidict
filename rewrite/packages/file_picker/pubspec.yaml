@@ -1,0 +1,8 @@
+name: file_picker
+description: Temporary compatibility adapter backed by file_selector
+version: 0.0.1
+publish_to: none
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+dependencies:
+  file_selector: ^1.1.0
