@@ -23,7 +23,11 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
 
   Future<void> capture(String language) async {
     if (busy) return;
-    if (listening) { await speech.stop(); if (mounted) setState(() => listening = false); return; }
+    if (listening) {
+      await speech.stop();
+      if (mounted) setState(() => listening = false);
+      return;
+    }
     setState(() { source = language; recognized = ''; translated = ''; message = ''; busy = true; });
     try {
       final ready = await speech.initialize(onError: (error) {
