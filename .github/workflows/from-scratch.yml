@@ -41,7 +41,7 @@ jobs:
           ns = '{http://schemas.android.com/apk/res/android}'
           if not any(x.get(ns+'name') == 'android.permission.INTERNET' for x in root.findall('uses-permission')):
               root.insert(0, ET.Element('uses-permission', {ns+'name':'android.permission.INTERNET'}))
-          tree.write(manifest, encoding='unicode', xml_declaration=True
+          tree.write(manifest, encoding='unicode', xml_declaration=True)
           PY
       - name: Resolve
         run: flutter pub get
