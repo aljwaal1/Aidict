@@ -52,7 +52,7 @@ jobs:
           text = text.replace('compileSdk = flutter.compileSdkVersion','compileSdk = 36')
           gradle.write_text(text)
           PY
-          grep -n 'compileSdk\\|minSdk' android/app/build.gradle.kts
+          grep -nE 'compileSdk|minSdk' android/app/build.gradle.kts
           python3 - <<'PY'
           from pathlib import Path
           f = Path('android/app/build.gradle.kts').read_text()
