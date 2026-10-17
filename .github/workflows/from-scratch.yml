@@ -33,6 +33,14 @@ jobs:
           c = p.read_text().replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36').replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
           p.write_text(c)
           assert 'compileSdk = 36' in c and 'minSdk = 23' in c
+          import xml.etree.ElementTree as ET
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          ns = '{http://schemas.android.com/apk/res/android}'
+          if not any(x.get(ns+'name') == 'android.permission.INTERNET' for x in root.findall('uses-permission')):
+              root.insert(0, ET.Element('uses-permission', {ns+'name':'android.permission.INTERNET'}))
+          tree.write(manifest, encoding='unicode', xml_declaration=True
           PY
       - name: Resolve
         run: flutter pub get
@@ -42,6 +50,10 @@ jobs:
         run: flutter test
       - name: Build APK
         run: flutter build apk --debug
+      - name: Verify APK
+        run: |
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          sha256sum build/app/outputs/flutter-apk/app-debug.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
