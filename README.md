@@ -31,3 +31,7 @@ Camera capture and importing an image/screenshot now extract **Latin-script text
 ## Development update — voice conversation
 
 Added a basic alternating two-speaker voice conversation screen using speech_to_text, an online text translation endpoint and flutter_tts. Requires RECORD_AUDIO permission and compatible speech/TTS services. Speech recognition may require a network connection depending on the Android device; do not describe it as offline. It does not yet support simultaneous speakers, streaming translation, audio file translation, or an overlay-camera interface. Android CI and real-device QA remain unverified.
+
+## Document import — preliminary
+
+Added a file picker and local text extraction for PDF, DOCX and TXT files. Import populates the text field; it does **not** yet translate complete large documents automatically, produce a translated DOCX/PDF, retain original formatting, or OCR scanned PDFs. The current online translation service limits each request to 450 characters. Document import is limited to 12 MB and 40,000 extracted characters. This feature is source-committed but not yet verified by Flutter analyze, Android build or device testing. PDF parsing uses Syncfusion's package, whose licensing terms should be reviewed before distribution.
