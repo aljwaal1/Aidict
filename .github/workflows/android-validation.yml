@@ -125,7 +125,7 @@ jobs:
           test "$TEST_RESULT" = success &&
           test "$BUILD_RESULT" = success
       - name: Upload APK
-        if: success()
+        if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: Aidict-debug-apk
