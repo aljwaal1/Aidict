@@ -39,6 +39,10 @@ jobs:
           permission = '<uses-permission android:name="android.permission.INTERNET" />'
           if permission not in xml:
               xml = xml.replace('<application', permission + ' <application', 1)
+          for name in ['android.permission.CAMERA']:
+              permission = '<uses-permission android:name="' + name + '" />'
+              if permission not in xml:
+                  xml = xml.replace('<application', permission + ' <application', 1)
           manifest.write_text(xml)
           assert 'android:name="flutterEmbedding"' in xml
           assert 'android:value="2"' in xml
