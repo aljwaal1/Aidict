@@ -54,6 +54,7 @@ class DocumentTextReader {
             .where((element) => element.name.local == 't')
             .map((element) => element.innerText)
             .join()).join('\n');
+        break;
       default:
         throw const FormatException('صيغة الملف غير مدعومة');
     }
