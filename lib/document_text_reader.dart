@@ -26,6 +26,7 @@ class DocumentTextReader {
     switch (lower) {
       case 'txt':
         text = utf8.decode(bytes, allowMalformed: true);
+        break;
       case 'pdf':
         final document = PdfDocument(inputBytes: bytes);
         try {
@@ -33,6 +34,7 @@ class DocumentTextReader {
         } finally {
           document.dispose();
         }
+        break;
       case 'docx':
         final archive = ZipDecoder().decodeBytes(bytes);
         final documentXml = archive.findFile('word/document.xml');
