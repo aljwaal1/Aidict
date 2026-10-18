@@ -43,6 +43,10 @@ class SavedTranslations {
     entries.insert(0,value);
     await preferences.setStringList(key,entries.take(100).toList());
   }
+  static Future<void> clear({bool favorite=false}) async {
+    final preferences=await SharedPreferences.getInstance();
+    await preferences.remove(favorite?favoritesKey:historyKey);
+  }
   static Future<void> remove(String value,{bool favorite=false}) async {
     final preferences=await SharedPreferences.getInstance();
     final key=favorite?favoritesKey:historyKey;
@@ -105,14 +109,22 @@ class _TranslationLibraryPageState extends State<TranslationLibraryPage> {
     if(mounted)setState(()=>items=loaded);
   }
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:Text(widget.favorites?'المفضلة':'سجل الترجمات')),
+    appBar:AppBar(title:Text(widget.favorites?'المفضلة':'سجل الترجمات'),actions:[
+      IconButton(tooltip:'مسح الكل',icon:const Icon(Icons.delete_sweep_outlined),onPressed:items.isEmpty?null:() async {
+        final confirm=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
+          title:const Text('مسح جميع العناصر؟'),
+          content:Text(widget.favorites?'سيتم حذف جميع الترجمات المفضلة.':'سيتم حذف سجل الترجمات بالكامل.'),
+          actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('إلغاء')),
+            FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('مسح'))]));
+        if(confirm==true){await SavedTranslations.clear(favorite:widget.favorites);await refresh();}
+      })]),
     body:Column(children:[
       Padding(padding:const EdgeInsets.all(12),child:TextField(
         onChanged:(v)=>setState(()=>search=v),
         decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'بحث',border:OutlineInputBorder()))),
       Expanded(child:ListView(children:[
         for(final value in items.where((v)=>v.toLowerCase().contains(search.toLowerCase())))
-          ListTile(title:Text(value),trailing:IconButton(icon:const Icon(Icons.delete_outline),
+          ListTile(title:Text(value),onTap:()=>Navigator.pop(context,value),trailing:IconButton(icon:const Icon(Icons.delete_outline),
             onPressed:() async {
               await SavedTranslations.remove(value,favorite:widget.favorites);
               await refresh();
