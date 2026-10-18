@@ -5,6 +5,18 @@ const words = <String,String>{
   'hello':'مرحبًا','goodbye':'وداعًا','water':'ماء','food':'طعام',
   'hospital':'مستشفى','school':'مدرسة','doctor':'طبيب','family':'عائلة',
   'work':'عمل','friend':'صديق','thank you':'شكرًا','please':'من فضلك',
+  'book':'كتاب','computer':'حاسوب','phone':'هاتف','language':'لغة',
+  'translation':'ترجمة','dictionary':'قاموس','university':'جامعة',
+  'student':'طالب','teacher':'معلم','accountant':'محاسب',
+  'money':'مال','invoice':'فاتورة','bank':'بنك','balance':'رصيد',
+  'income':'دخل','expense':'مصروف','customer':'عميل',
+  'supplier':'مورد','business':'عمل تجاري','meeting':'اجتماع',
+  'today':'اليوم','tomorrow':'غدًا','yesterday':'أمس',
+  'morning':'صباح','evening':'مساء','night':'ليل',
+  'yes':'نعم','no':'لا','help':'مساعدة','welcome':'أهلًا',
+  'travel':'سفر','airport':'مطار','ticket':'تذكرة',
+  'hotel':'فندق','restaurant':'مطعم','street':'شارع',
+  'left':'يسار','right':'يمين','straight':'مباشرة',
 };
 
 String? findWord(String term) {
