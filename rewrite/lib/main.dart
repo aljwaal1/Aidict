@@ -5,7 +5,7 @@ import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
 import 'extra_features.dart';
 import 'image_text_reader.dart';
-import 'document_text_reader.dart';
+import 'document_text_reader_v2.dart';
 import 'package:flutter/services.dart';
 
 void main() => runApp(const AidictApp());
@@ -102,7 +102,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     if(busy)return;
     setState((){busy=true;message='';});
     try {
-      final text=await DocumentTextReader.selectAndExtract();
+      final text=await DocumentTextReaderV2.selectAndExtract();
       if(text!=null&&mounted)setState((){
         input.text=text;
         output='';
