@@ -34,6 +34,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   final input=TextEditingController();
   final manager=OnDeviceTranslatorModelManager();
   bool offline=true, busy=false;
+  bool get hasTranslation => output.trim().isNotEmpty;
   String dictionaryQuery='';
   String source='ar',target='en',output='',message='';
   Future<void> download() async {
@@ -181,11 +182,12 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           OutlinedButton.icon(onPressed:busy?null:importDocument,
             icon:const Icon(Icons.description_outlined),label:const Text('PDF / Word / TXT')),
         ]),
+        const Padding(padding:EdgeInsets.only(top:8),child:Text('استخراج النص من الصور يدعم الحروف اللاتينية حاليًا؛ التعرف على العربية من الصور غير متاح في هذا الإصدار.')),
         const SizedBox(height:12),
         FilledButton(onPressed:busy?null:translate,child:const Text('ترجمة')),
         if(busy)const LinearProgressIndicator(),
         if(message.isNotEmpty)Text(message),
-        if(output.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(16),
+        if(hasTranslation)Card(child:Padding(padding:const EdgeInsets.all(16),
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             SelectableText(output),
             Wrap(children:[
