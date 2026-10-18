@@ -20,10 +20,12 @@ class DocumentTextReaderV2 {
     switch(extension) {
       case 'txt':
         result=utf8.decode(bytes,allowMalformed:true);
+        break;
       case 'pdf':
         final pdf=PdfDocument(inputBytes:bytes);
         try {result=PdfTextExtractor(pdf).extractText();}
         finally {pdf.dispose();}
+        break;
       case 'docx':
         final zip=ZipDecoder().decodeBytes(bytes);
         final doc=zip.findFile('word/document.xml');
@@ -33,6 +35,7 @@ class DocumentTextReaderV2 {
         final xml=XmlDocument.parse(utf8.decode(raw));
         final paragraphs=xml.descendants.whereType<XmlElement>().where((e)=>e.name.local=='p');
         result=paragraphs.map((p)=>p.descendants.whereType<XmlElement>().where((e)=>e.name.local=='t').map((e)=>e.innerText).join()).join('\n');
+        break;
       default:
         throw const FormatException('Unsupported document');
     }
