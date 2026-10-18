@@ -59,16 +59,49 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       targetLanguage:target=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
     try{return await t.translateText(text);}finally{await t.close();}
   }
+  // Keep requests under the online provider's 450-character limit.
+  // Split at word boundaries when possible and preserve every character.
+  static List<String> splitForTranslation(String text, {int maxLength = 450}) {
+    if (maxLength < 1) throw ArgumentError.value(maxLength, 'maxLength');
+    final chunks = <String>[];
+    var offset = 0;
+    while (offset < text.length) {
+      var end = offset + maxLength;
+      if (end >= text.length) {
+        chunks.add(text.substring(offset));
+        break;
+      }
+      final candidate = text.substring(offset, end);
+      final boundary = candidate.lastIndexOf(RegExp(r'\s'));
+      if (boundary > 0 && boundary >= maxLength ~/ 2) {
+        end = offset + boundary + 1;
+      }
+      chunks.add(text.substring(offset, end));
+      offset = end;
+    }
+    return chunks;
+  }
   Future<String> online(String text) async {
-    if(text.length>450)throw StateError('حد الترجمة المتصلة 450 حرفًا');
-    final url=Uri.https('api.mymemory.translated.net','/get',
-      {'q':text,'langpair':'$source|$target'});
-    final response=await http.get(url).timeout(const Duration(seconds:20));
-    if(response.statusCode!=200)throw StateError('الخدمة غير متاحة');
-    final data=jsonDecode(response.body) as Map<String,dynamic>;
-    final result=(data['responseData'] as Map?)?['translatedText']?.toString();
-    if(result==null||result.isEmpty)throw StateError('لم تصل ترجمة');
-    return result;
+    final results = <String>[];
+    for (final chunk in splitForTranslation(text)) {
+      if (chunk.trim().isEmpty) {
+        results.add(chunk);
+        continue;
+      }
+      final url = Uri.https('api.mymemory.translated.net', '/get',
+          {'q': chunk, 'langpair': '$source|$target'});
+      final response = await http.get(url).timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) {
+        throw StateError('تعذرت ترجمة جزء من المستند (HTTP ${response.statusCode})');
+      }
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = (data['responseData'] as Map?)?['translatedText']?.toString();
+      if (result == null || result.isEmpty) {
+        throw StateError('لم تصل ترجمة لأحد أجزاء المستند');
+      }
+      results.add(result);
+    }
+    return results.join('\\n');
   }
   Future<void> translate() async {
     if(busy||input.text.trim().isEmpty)return;
