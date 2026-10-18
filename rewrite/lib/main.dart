@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
+import 'translation_chunks.dart';
 import 'extra_features.dart';
 import 'image_text_reader.dart';
 import 'document_text_reader_v2.dart';
@@ -59,31 +60,14 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       targetLanguage:target=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
     try{return await t.translateText(text);}finally{await t.close();}
   }
-  // Keep requests under the online provider's 450-character limit.
-  // Split at word boundaries when possible and preserve every character.
-  static List<String> splitForTranslation(String text, {int maxLength = 450}) {
-    if (maxLength < 1) throw ArgumentError.value(maxLength, 'maxLength');
-    final chunks = <String>[];
-    var offset = 0;
-    while (offset < text.length) {
-      var end = offset + maxLength;
-      if (end >= text.length) {
-        chunks.add(text.substring(offset));
-        break;
-      }
-      final candidate = text.substring(offset, end);
-      final boundary = candidate.lastIndexOf(RegExp(r'\s'));
-      if (boundary > 0 && boundary >= maxLength ~/ 2) {
-        end = offset + boundary + 1;
-      }
-      chunks.add(text.substring(offset, end));
-      offset = end;
-    }
-    return chunks;
-  }
   Future<String> online(String text) async {
     final results = <String>[];
-    for (final chunk in splitForTranslation(text)) {
+    final chunks = TranslationChunks.split(text);
+    for (var index = 0; index < chunks.length; index++) {
+      final chunk = chunks[index];
+      if (mounted) {
+        setState(() => message = 'ترجمة الجزء ${index + 1} من ${chunks.length}');
+      }
       if (chunk.trim().isEmpty) {
         results.add(chunk);
         continue;
@@ -95,13 +79,17 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         throw StateError('تعذرت ترجمة جزء من المستند (HTTP ${response.statusCode})');
       }
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final status = data['responseStatus'];
+      if (status is num && status != 200) {
+        throw StateError('خدمة الترجمة رفضت الطلب (رمز $status)');
+      }
       final result = (data['responseData'] as Map?)?['translatedText']?.toString();
       if (result == null || result.isEmpty) {
         throw StateError('لم تصل ترجمة لأحد أجزاء المستند');
       }
       results.add(result);
     }
-    return results.join('\\n');
+    return results.join('\n');
   }
   Future<void> translate() async {
     if(busy||input.text.trim().isEmpty)return;
