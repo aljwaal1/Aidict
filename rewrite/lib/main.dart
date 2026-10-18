@@ -59,7 +59,14 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     final t=OnDeviceTranslator(
       sourceLanguage:source=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
       targetLanguage:target=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
-    try{return await t.translateText(text);}finally{await t.close();}
+    try {
+      final parts = TranslationChunks.split(text, maxBytes: 2500);
+      final translated = <String>[];
+      for (final part in parts) {
+        translated.add(await t.translateText(part));
+      }
+      return translated.join('\n');
+    } finally {await t.close();}
   }
   Future<String> online(String text) async {
     final results = <String>[];
@@ -92,6 +99,11 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     }
     return results.join('\n');
   }
+  void clearText() => setState(() {input.clear();output='';message='';});
+  void reverseLanguages() => setState(() {
+    final previous=source;source=target;target=previous;
+    if(output.isNotEmpty){final old=input.text;input.text=output;output=old;}
+  });
   Future<void> translate() async {
     if(busy||input.text.trim().isEmpty)return;
     setState((){busy=true;message='';});
@@ -159,9 +171,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             onChanged:busy?null:(v)=>setState((){
               if(v==null)return;source=v;if(offline)target=v=='ar'?'en':'ar';
             }))),
-          IconButton(onPressed:busy?null:()=>setState((){
-            final v=source;source=target;target=v;output='';
-          }),icon:const Icon(Icons.swap_horiz)),
+          IconButton(tooltip:'تبديل اللغات والنصوص',onPressed:busy?null:reverseLanguages,icon:const Icon(Icons.swap_horiz)),
           Expanded(child:DropdownButtonFormField<String>(
             key:ValueKey('target-$offline-$target'),
             initialValue:target,
@@ -173,6 +183,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         const SizedBox(height:16),
         TextField(controller:input,minLines:3,maxLines:6,
           decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'النص')),
+        Align(alignment:Alignment.centerLeft,child:TextButton.icon(onPressed:busy?null:clearText,icon:const Icon(Icons.clear),label:const Text('مسح النص'))),
         const SizedBox(height:12),
         Wrap(spacing:8,runSpacing:4,children:[
           OutlinedButton.icon(onPressed:busy?null:()=>importImage(true),
