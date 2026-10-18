@@ -99,6 +99,17 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     }
     return results.join('\n');
   }
+  Future<void> openSavedTranslations(bool favorites) async {
+    final selected=await Navigator.push<String>(context,MaterialPageRoute<String>(
+      builder:(_)=>TranslationLibraryPage(favorites:favorites)));
+    if(!mounted||selected==null)return;
+    final parts=selected.split(' | ');
+    if(parts.length>=3){
+      setState((){input.text=parts.sublist(1,parts.length-1).join(' | ');output=parts.last;message='تم استرجاع الترجمة المحفوظة';});
+    }else{
+      setState((){input.text=selected;output='';message='تم استرجاع النص المحفوظ';});
+    }
+  }
   void clearText() => setState(() {input.clear();output='';message='';});
   void reverseLanguages() => setState(() {
     final previous=source;source=target;target=previous;
@@ -212,8 +223,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             final clip=await Clipboard.getData(Clipboard.kTextPlain);
             if(clip?.text!=null)input.text=clip!.text!;
           },icon:const Icon(Icons.paste),label:const Text('لصق')),
-          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const TranslationLibraryPage(favorites:false))),child:const Text('السجل')),
-          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const TranslationLibraryPage(favorites:true))),child:const Text('المفضلة')),
+          OutlinedButton(onPressed:()=>openSavedTranslations(false),child:const Text('السجل')),
+          OutlinedButton(onPressed:()=>openSavedTranslations(true),child:const Text('المفضلة')),
           OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
         ]),
         ExpansionTile(title:const Text('قاموس عربي–إنجليزي'),children:[
