@@ -10,6 +10,7 @@ import 'document_text_reader_v2.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'voice_conversation_page.dart';
+import 'text_preparation.dart';
 
 void main() => runApp(const AidictApp());
 class AidictApp extends StatefulWidget {
@@ -115,6 +116,17 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       setState((){input.text=selected;output='';message='تم استرجاع النص المحفوظ';});
     }
   }
+  void cleanImportedText() => setState(() {
+    input.text=TextPreparation.normalize(input.text);
+    message='تم تنظيف المسافات وفواصل الأسطر';
+  });
+  void showAiFeatureInfo() {
+    showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
+      title:const Text('مساعد الكتابة بالذكاء الاصطناعي'),
+      content:const Text('إعادة الصياغة والتدقيق المتقدم تحتاج مزود AI ومفتاح وصول آمن. الميزة غير مفعلة إلى حين توفير خدمة موثوقة؛ لم يتم إرسال أي نص إلى مزود AI.'),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('موافق'))],
+    ));
+  }
   void clearText() => setState(() {input.clear();output='';message='';});
   void reverseLanguages() => setState(() {
     final previous=source;source=target;target=previous;
@@ -206,6 +218,11 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         const SizedBox(height:16),
         TextField(controller:input,minLines:3,maxLines:6,
           decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'النص')),
+        if(input.text.trim().isNotEmpty)Padding(
+          padding:const EdgeInsets.symmetric(vertical:6),
+          child:Text('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}')),
+        OutlinedButton.icon(onPressed:busy?null:cleanImportedText,
+          icon:const Icon(Icons.auto_fix_high),label:const Text('تنظيف النص')),
         Align(alignment:Alignment.centerLeft,child:TextButton.icon(onPressed:busy?null:clearText,icon:const Icon(Icons.clear),label:const Text('مسح النص'))),
         const SizedBox(height:12),
         Wrap(spacing:8,runSpacing:4,children:[
@@ -237,6 +254,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             if(clip?.text!=null)input.text=clip!.text!;
           },icon:const Icon(Icons.paste),label:const Text('لصق')),
           OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>offline?local(text,sourceCode:s,targetCode:t):online(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:const Text('محادثة صوتية')),
+          OutlinedButton.icon(onPressed:showAiFeatureInfo,icon:const Icon(Icons.auto_awesome),label:const Text('مساعد الكتابة AI')),
           OutlinedButton(onPressed:()=>openSavedTranslations(false),child:const Text('السجل')),
           OutlinedButton(onPressed:()=>openSavedTranslations(true),child:const Text('المفضلة')),
           OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
