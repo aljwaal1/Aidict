@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:file_selector/file_selector.dart';
 
 /// Optional user-supplied HTTPS backend. No secret is embedded in the APK.
 /// The backend must implement POST /v1/aidict with {task,text,language}.
@@ -10,6 +11,25 @@ class AiBackend {
       throw const FormatException('يتطلب عنوان HTTPS صالحًا لخادم المعالجة');
     }
     return uri;
+  }
+  static Future<String?> transcribeAudio({required String endpoint}) async {
+    const types=XTypeGroup(label:'Audio',extensions:['mp3','wav','m4a','aac','ogg','flac']);
+    final file=await openFile(acceptedTypeGroups:[types]);
+    if(file==null)return null;
+    if(await file.length()>12*1024*1024) {
+      throw const FormatException('الحد الأقصى للتسجيل 12 ميغابايت');
+    }
+    final request=http.MultipartRequest('POST',validate(endpoint));
+    request.fields['task']='transcribe';
+    request.files.add(http.MultipartFile.fromBytes('audio',await file.readAsBytes(),filename:file.name));
+    final streamed=await request.send().timeout(const Duration(seconds:90));
+    final response=await http.Response.fromStream(streamed);
+    if(response.statusCode!=200)throw StateError('تعذر تفريغ الصوت: HTTP ${response.statusCode}');
+    final data=jsonDecode(utf8.decode(response.bodyBytes));
+    if(data is! Map||data['result'] is! String) {
+      throw const FormatException('استجابة غير صالحة من خدمة التفريغ');
+    }
+    return data['result'] as String;
   }
   static Future<String> process({required String endpoint,required String task,
     required String text,String language='ar'}) async {
