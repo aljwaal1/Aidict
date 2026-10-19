@@ -22,8 +22,8 @@ class _AidictAppState extends State<AidictApp> {
   @override Widget build(BuildContext context) => MaterialApp(
     title:'Aidict', debugShowCheckedModeBanner:false,
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    theme: ThemeData(useMaterial3:true,colorSchemeSeed:Colors.blue),
-    darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark),
+    theme: ThemeData(useMaterial3:true,colorSchemeSeed:const Color(0xFF007F86),scaffoldBackgroundColor:const Color(0xFFF5F9FA),appBarTheme:const AppBarTheme(centerTitle:false),cardTheme:CardThemeData(elevation:0,color:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
+    darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorSchemeSeed:const Color(0xFF22BDC2),cardTheme:const CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
     home: Directionality(textDirection:TextDirection.rtl,
       child: TranslatorScreen(toggleTheme:()=>setState(()=>dark=!dark))),
   );
@@ -116,6 +116,16 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       setState((){input.text=selected;output='';message='تم استرجاع النص المحفوظ';});
     }
   }
+  void showDocumentPreview() {
+    final text=TextPreparation.normalize(input.text);
+    if(text.isEmpty) return;
+    showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
+      title:const Text('معاينة النص المستخرج'),
+      content:SizedBox(width:500,child:SingleChildScrollView(
+        child:SelectableText(TextPreparation.preview(text,maxLength:3000)))),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))],
+    ));
+  }
   void cleanImportedText() => setState(() {
     input.text=TextPreparation.normalize(input.text);
     message='تم تنظيف المسافات وفواصل الأسطر';
@@ -188,7 +198,13 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       appBar:AppBar(title:const Text('Aidict • المترجم'),
         actions:[IconButton(onPressed:widget.toggleTheme,icon:const Icon(Icons.dark_mode))]),
       body:ListView(padding:const EdgeInsets.all(16),children:[
-        const Text('عربي ↔ إنجليزي محليًا، وبقية اللغات عبر الإنترنت'),
+        Card(color:Theme.of(context).colorScheme.primaryContainer,
+          child:Padding(padding:const EdgeInsets.all(18),child:Column(
+            crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text('ترجم، تعلّم، وتحدث',style:Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height:6),
+              const Text('عربي ↔ إنجليزي محليًا، وبقية اللغات عبر الإنترنت'),
+            ]))),
         const SizedBox(height:16),
         SegmentedButton<bool>(segments:const [
           ButtonSegment(value:true,label:Text('محلي'),icon:Icon(Icons.wifi_off)),
@@ -221,8 +237,11 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         if(input.text.trim().isNotEmpty)Padding(
           padding:const EdgeInsets.symmetric(vertical:6),
           child:Text('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}')),
-        OutlinedButton.icon(onPressed:busy?null:cleanImportedText,
+        Wrap(spacing:8,children:[
+          OutlinedButton.icon(onPressed:busy?null:showDocumentPreview,icon:const Icon(Icons.preview),label:const Text('معاينة النص')),
+          OutlinedButton.icon(onPressed:busy?null:cleanImportedText,
           icon:const Icon(Icons.auto_fix_high),label:const Text('تنظيف النص')),
+        ]),
         Align(alignment:Alignment.centerLeft,child:TextButton.icon(onPressed:busy?null:clearText,icon:const Icon(Icons.clear),label:const Text('مسح النص'))),
         const SizedBox(height:12),
         Wrap(spacing:8,runSpacing:4,children:[
@@ -233,7 +252,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           OutlinedButton.icon(onPressed:busy?null:importDocument,
             icon:const Icon(Icons.description_outlined),label:const Text('PDF / Word / TXT')),
         ]),
-        const Padding(padding:EdgeInsets.only(top:8),child:Text('استخراج النص من الصور يدعم الحروف اللاتينية حاليًا؛ التعرف على العربية من الصور غير متاح في هذا الإصدار.')),
+        const Padding(padding:EdgeInsets.only(top:8),child:Text('تعرف الصور يدعم النصوص اللاتينية فقط حاليًا؛ ملفات PDF المصورة والعربية في الصور تحتاج خدمة OCR أخرى.')),
         const SizedBox(height:12),
         FilledButton(onPressed:busy?null:translate,child:const Text('ترجمة')),
         if(busy)const LinearProgressIndicator(),
