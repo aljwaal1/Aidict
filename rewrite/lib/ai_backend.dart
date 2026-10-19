@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:file_selector/file_selector.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Optional user-supplied HTTPS backend. No secret is embedded in the APK.
 /// The backend must implement POST /v1/aidict with {task,text,language}.
@@ -28,6 +29,27 @@ class AiBackend {
     final data=jsonDecode(utf8.decode(response.bodyBytes));
     if(data is! Map||data['result'] is! String) {
       throw const FormatException('استجابة غير صالحة من خدمة التفريغ');
+    }
+    return data['result'] as String;
+  }
+  /// Arabic/multilingual OCR requires an external OCR-capable endpoint.
+  static Future<String?> recognizeImage({required String endpoint,required bool camera}) async {
+    final image=await ImagePicker().pickImage(
+      source:camera?ImageSource.camera:ImageSource.gallery,imageQuality:90);
+    if(image==null)return null;
+    if(await image.length()>12*1024*1024) {
+      throw const FormatException('حجم الصورة أكبر من 12 ميغابايت');
+    }
+    final request=http.MultipartRequest('POST',validate(endpoint));
+    request.fields['task']='ocr';
+    request.files.add(http.MultipartFile.fromBytes('image',await image.readAsBytes(),
+      filename:image.name));
+    final streamed=await request.send().timeout(const Duration(seconds:90));
+    final response=await http.Response.fromStream(streamed);
+    if(response.statusCode!=200)throw StateError('تعذر استخراج النص العربي: HTTP ${response.statusCode}');
+    final data=jsonDecode(utf8.decode(response.bodyBytes));
+    if(data is! Map||data['result'] is! String) {
+      throw const FormatException('استجابة OCR غير صالحة');
     }
     return data['result'] as String;
   }
