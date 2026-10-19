@@ -8,6 +8,8 @@ import 'extra_features.dart';
 import 'image_text_reader.dart';
 import 'document_text_reader_v2.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'voice_conversation_page.dart';
 
 void main() => runApp(const AidictApp());
 class AidictApp extends StatefulWidget {
@@ -33,6 +35,7 @@ class TranslatorScreen extends StatefulWidget {
 class _TranslatorScreenState extends State<TranslatorScreen> {
   final input=TextEditingController();
   final manager=OnDeviceTranslatorModelManager();
+  final FlutterTts tts=FlutterTts();
   bool offline=true, busy=false;
   bool get hasTranslation => output.trim().isNotEmpty;
   String dictionaryQuery='';
@@ -51,14 +54,16 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       if(mounted)setState(()=>message='$e');
     } finally {if(mounted)setState(()=>busy=false);}
   }
-  Future<String> local(String text) async {
-    if(!TranslationPolicy.offlineAllowed(source,target))throw StateError('المحلي عربي ↔ إنجليزي فقط');
-    if(!await manager.isModelDownloaded(source) || !await manager.isModelDownloaded(target)) {
+  Future<String> local(String text,{String? sourceCode,String? targetCode}) async {
+    final src=sourceCode??source;
+    final dst=targetCode??target;
+    if(!TranslationPolicy.offlineAllowed(src,dst))throw StateError('المحلي عربي ↔ إنجليزي فقط');
+    if(!await manager.isModelDownloaded(src) || !await manager.isModelDownloaded(dst)) {
       throw StateError('نزّل نموذجي اللغة أولًا');
     }
     final t=OnDeviceTranslator(
-      sourceLanguage:source=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
-      targetLanguage:target=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
+      sourceLanguage:src=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
+      targetLanguage:dst=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
     try {
       final parts = TranslationChunks.split(text, maxBytes: 2500);
       final translated = <String>[];
@@ -68,7 +73,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       return translated.join('\n');
     } finally {await t.close();}
   }
-  Future<String> online(String text) async {
+  Future<String> online(String text,{String? sourceCode,String? targetCode}) async {
     final results = <String>[];
     final chunks = TranslationChunks.split(text);
     for (var index = 0; index < chunks.length; index++) {
@@ -81,7 +86,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         continue;
       }
       final url = Uri.https('api.mymemory.translated.net', '/get',
-          {'q': chunk, 'langpair': '$source|$target'});
+          {'q': chunk, 'langpair': '${sourceCode??source}|${targetCode??target}'});
       final response = await http.get(url).timeout(const Duration(seconds: 20));
       if (response.statusCode != 200) {
         throw StateError('تعذرت ترجمة جزء من المستند (HTTP ${response.statusCode})');
@@ -157,7 +162,14 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       if(mounted)setState(()=>message='تعذر قراءة المستند: $e');
     } finally {if(mounted)setState(()=>busy=false);}
   }
-  @override void dispose(){input.dispose();super.dispose();}
+  Future<void> speakTranslation() async {
+    if(output.trim().isEmpty)return;
+    try {
+      await tts.setLanguage(target=='ar'?'ar':'en-US');
+      await tts.speak(output);
+    } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
+  }
+  @override void dispose(){input.dispose();tts.stop();super.dispose();}
   @override Widget build(BuildContext context) {
     final languages=offline?const ['ar','en']:const ['ar','en','sv','fr','de','es','tr'];
     return Scaffold(
@@ -213,6 +225,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             SelectableText(output),
             Wrap(children:[
+              IconButton(tooltip:'الاستماع للترجمة',onPressed:speakTranslation,icon:const Icon(Icons.volume_up)),
               IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
               IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
             ]),
@@ -223,6 +236,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             final clip=await Clipboard.getData(Clipboard.kTextPlain);
             if(clip?.text!=null)input.text=clip!.text!;
           },icon:const Icon(Icons.paste),label:const Text('لصق')),
+          OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>offline?local(text,sourceCode:s,targetCode:t):online(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:const Text('محادثة صوتية')),
           OutlinedButton(onPressed:()=>openSavedTranslations(false),child:const Text('السجل')),
           OutlinedButton(onPressed:()=>openSavedTranslations(true),child:const Text('المفضلة')),
           OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
