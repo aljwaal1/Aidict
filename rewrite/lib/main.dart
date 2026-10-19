@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
 import 'translation_chunks.dart';
@@ -12,6 +10,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
 import 'ai_tools_page.dart';
+import 'translation_engine.dart';
 
 void main() => runApp(const AidictApp());
 class AidictApp extends StatefulWidget {
@@ -39,6 +38,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   final manager=OnDeviceTranslatorModelManager();
   final FlutterTts tts=FlutterTts();
   bool offline=true, busy=false;
+  OnlineEngine engine=OnlineEngine.myMemory;
+  final engineEndpoint=TextEditingController();
   bool get hasTranslation => output.trim().isNotEmpty;
   String dictionaryQuery='';
   String source='ar',target='en',output='',message='';
@@ -87,21 +88,9 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         results.add(chunk);
         continue;
       }
-      final url = Uri.https('api.mymemory.translated.net', '/get',
-          {'q': chunk, 'langpair': '${sourceCode??source}|${targetCode??target}'});
-      final response = await http.get(url).timeout(const Duration(seconds: 20));
-      if (response.statusCode != 200) {
-        throw StateError('تعذرت ترجمة جزء من المستند (HTTP ${response.statusCode})');
-      }
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final status = data['responseStatus'];
-      if (status is num && status != 200) {
-        throw StateError('خدمة الترجمة رفضت الطلب (رمز $status)');
-      }
-      final result = (data['responseData'] as Map?)?['translatedText']?.toString();
-      if (result == null || result.isEmpty) {
-        throw StateError('لم تصل ترجمة لأحد أجزاء المستند');
-      }
+      final result=await TranslationEngine.translate(
+        text:chunk,source:sourceCode??source,target:targetCode??target,
+        engine:engine,endpoint:engineEndpoint.text);
       results.add(result);
     }
     return results.join('\n');
@@ -195,7 +184,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       await tts.speak(output);
     } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
   }
-  @override void dispose(){input.dispose();tts.stop();super.dispose();}
+  @override void dispose(){input.dispose();engineEndpoint.dispose();tts.stop();super.dispose();}
   @override Widget build(BuildContext context) {
     final languages=offline?const ['ar','en']:const ['ar','en','sv','fr','de','es','tr'];
     return Scaffold(
@@ -216,6 +205,24 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           selected:{offline},onSelectionChanged:(s)=>setState((){
             offline=s.first;source='ar';target='en';output='';
           })),
+        if(!offline) Card(child:Padding(padding:const EdgeInsets.all(12),
+          child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+            const Text('محرك الترجمة المتصلة'),
+            DropdownButton<OnlineEngine>(
+              value:engine,isExpanded:true,
+              items:const [
+                DropdownMenuItem(value:OnlineEngine.myMemory,child:Text('MyMemory')),
+                DropdownMenuItem(value:OnlineEngine.libreTranslate,child:Text('LibreTranslate (خادم خاص)')),
+              ],
+              onChanged:busy?null:(v){if(v!=null)setState(()=>engine=v);},
+            ),
+            if(engine==OnlineEngine.libreTranslate) TextField(
+              controller:engineEndpoint,
+              keyboardType:TextInputType.url,
+              decoration:const InputDecoration(
+                labelText:'رابط HTTPS لنقطة /translate',
+                hintText:'https://example.com/translate')),
+          ]))),
         if(offline) OutlinedButton.icon(onPressed:busy?null:download,
           icon:const Icon(Icons.download),label:const Text('تنزيل العربية والإنجليزية')),
         Row(children:[
