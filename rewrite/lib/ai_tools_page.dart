@@ -29,6 +29,17 @@ class _AiToolsPageState extends State<AiToolsPage> {
     final prefs=await SharedPreferences.getInstance();
     await prefs.setString(endpointKey,uri.toString());
   }
+  Future<void> runOcr(bool camera) async {
+    if(busy)return;
+    setState((){busy=true;error='';result='';});
+    try {
+      await _saveEndpoint();
+      final extracted=await AiBackend.recognizeImage(endpoint:endpoint.text,camera:camera);
+      if(mounted)setState(()=>result=extracted??'لم تُختر صورة');
+    } catch(e) {
+      if(mounted)setState(()=>error='$e');
+    } finally {if(mounted)setState(()=>busy=false);}
+  }
   Future<void> run(String task) async {
     if(busy)return;
     setState((){busy=true;error='';result='';});
@@ -66,12 +77,16 @@ class _AiToolsPageState extends State<AiToolsPage> {
           icon:const Icon(Icons.spellcheck),label:const Text('تدقيق')),
         FilledButton.icon(onPressed:busy?null:()=>run('summarize'),
           icon:const Icon(Icons.summarize),label:const Text('تلخيص')),
+        OutlinedButton.icon(onPressed:busy?null:()=>runOcr(false),
+          icon:const Icon(Icons.image_search),label:const Text('OCR عربي من صورة')),
+        OutlinedButton.icon(onPressed:busy?null:()=>runOcr(true),
+          icon:const Icon(Icons.camera_alt),label:const Text('OCR عربي بالكاميرا')),
         OutlinedButton.icon(onPressed:busy?null:()=>run('transcribe'),
           icon:const Icon(Icons.audio_file),label:const Text('تفريغ ملف صوتي')),
       ]),
       const SizedBox(height:12),
       const Text('عقد الخدمة: POST JSON للكتابة أو multipart/form-data '
-        'بتحميل حقل audio للتفريغ؛ النتيجة يجب أن تكون JSON باسم result.'),
+        'بحقل audio للتفريغ أو image للتعرف على النص العربي؛ النتيجة JSON باسم result.'),
       if(busy)const LinearProgressIndicator(),
       if(error.isNotEmpty)Text(error,style:TextStyle(color:Theme.of(context).colorScheme.error)),
       if(result.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),
