@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/services.dart';
+import 'extra_features.dart';
 
 /// Voice capture follows device speech service availability; offline recognition
 /// is not guaranteed, and no recording is stored by this screen.
@@ -59,6 +61,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
       setState(() => translated = output);
       await tts.setLanguage(target == 'ar' ? 'ar' : 'en-US');
       await tts.speak(output);
+      await SavedTranslations.add('$source → $target | $recognized | $output');
     } catch (e) {
       if (mounted) setState(() => message = 'تعذرت الترجمة أو قراءة الصوت: $e');
     } finally { if (mounted) setState(() => busy = false); }
@@ -84,16 +87,33 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
           onPressed: busy ? null : () => capture('en'),
           icon: const Icon(Icons.mic), label: const Text('English speaker'))),
       ]),
-      if (listening) const Text('الميكروفون يعمل — اضغط الزر نفسه لإيقافه'),
+      if (listening) ...[
+        const Text('الميكروفون يعمل — يمكنك إنهاء الاستماع الآن'),
+        OutlinedButton.icon(onPressed: () async {
+          await speech.stop();
+          if (mounted) setState(() => listening = false);
+        },icon:const Icon(Icons.stop_circle_outlined),label:const Text('إيقاف الاستماع')),
+      ],
       const SizedBox(height: 16),
       Text('الكلام المسموع:', style: Theme.of(context).textTheme.titleMedium),
       SelectableText(recognized.isEmpty ? '—' : recognized),
+      if (recognized.isNotEmpty) TextButton.icon(
+        onPressed:()=>Clipboard.setData(ClipboardData(text:recognized)),
+        icon:const Icon(Icons.copy),label:const Text('نسخ الكلام')),
       const SizedBox(height: 12),
       FilledButton(onPressed: busy || recognized.trim().isEmpty ? null : translateCaptured,
         child: const Text('ترجمة ونطق')),
       const SizedBox(height: 16),
       Text('الترجمة:', style: Theme.of(context).textTheme.titleMedium),
       SelectableText(translated.isEmpty ? '—' : translated),
+      if (translated.isNotEmpty) Wrap(children:[
+        TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:translated)),
+          icon:const Icon(Icons.copy),label:const Text('نسخ الترجمة')),
+        TextButton.icon(onPressed:() async {
+          await tts.setLanguage(target=='ar'?'ar':'en-US');
+          await tts.speak(translated);
+        },icon:const Icon(Icons.volume_up),label:const Text('إعادة النطق')),
+      ]),
       if (message.isNotEmpty) Text(message),
     ]),
   );
