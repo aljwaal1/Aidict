@@ -39,10 +39,16 @@ jobs:
           permission = '<uses-permission android:name="android.permission.INTERNET" />'
           if permission not in xml:
               xml = xml.replace('<application', permission + ' <application', 1)
-          for name in ['android.permission.CAMERA']:
+          for name in ['android.permission.CAMERA', 'android.permission.RECORD_AUDIO']:
               permission = '<uses-permission android:name="' + name + '" />'
               if permission not in xml:
                   xml = xml.replace('<application', permission + ' <application', 1)
+          queries = ('<queries>'
+                     '<intent><action android:name="android.speech.RecognitionService" /></intent>'
+                     '<intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>'
+                     '</queries>')
+          if '<queries' not in xml:
+              xml = xml.replace('<application', queries + ' <application', 1)
           manifest.write_text(xml)
           assert 'android:name="flutterEmbedding"' in xml
           assert 'android:value="2"' in xml
