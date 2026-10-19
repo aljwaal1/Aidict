@@ -16,6 +16,8 @@ dependencies:
   syncfusion_flutter_pdf: ^34.2.7
   archive: ^4.5.2
   xml: ^7.0.1
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
