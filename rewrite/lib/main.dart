@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
+import 'ai_tools_page.dart';
 
 void main() => runApp(const AidictApp());
 class AidictApp extends StatefulWidget {
@@ -130,12 +131,15 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     input.text=TextPreparation.normalize(input.text);
     message='تم تنظيف المسافات وفواصل الأسطر';
   });
-  void showAiFeatureInfo() {
-    showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
-      title:const Text('مساعد الكتابة بالذكاء الاصطناعي'),
-      content:const Text('إعادة الصياغة والتدقيق المتقدم تحتاج مزود AI ومفتاح وصول آمن. الميزة غير مفعلة إلى حين توفير خدمة موثوقة؛ لم يتم إرسال أي نص إلى مزود AI.'),
-      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('موافق'))],
-    ));
+  void openAiTools() {
+    Navigator.push<void>(context,MaterialPageRoute<void>(
+      builder:(_)=>AiToolsPage(initialText:input.text,onResult:(value){
+        if(mounted)setState((){
+          input.text=value;
+          output='';
+          message='تم استيراد نتيجة المعالجة';
+        });
+      })));
   }
   void clearText() => setState(() {input.clear();output='';message='';});
   void reverseLanguages() => setState(() {
@@ -273,7 +277,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             if(clip?.text!=null)input.text=clip!.text!;
           },icon:const Icon(Icons.paste),label:const Text('لصق')),
           OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>offline?local(text,sourceCode:s,targetCode:t):online(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:const Text('محادثة صوتية')),
-          OutlinedButton.icon(onPressed:showAiFeatureInfo,icon:const Icon(Icons.auto_awesome),label:const Text('مساعد الكتابة AI')),
+          OutlinedButton.icon(onPressed:openAiTools,icon:const Icon(Icons.auto_awesome),label:const Text('مساعد الكتابة AI')),
           OutlinedButton(onPressed:()=>openSavedTranslations(false),child:const Text('السجل')),
           OutlinedButton(onPressed:()=>openSavedTranslations(true),child:const Text('المفضلة')),
           OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
