@@ -163,6 +163,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           output='';
           message='تم استيراد نتيجة المعالجة';
         });
+        }
       })));
   }
   void clearText() => setState(() {input.clear();output='';message='';});
@@ -196,6 +197,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         output='';
         message='تم استخراج النص من الصورة. اضغط ترجمة.';
       });
+      }
     } catch(e) {
       if(mounted)setState(()=>message='تعذر استخراج النص: $e');
     } finally {if(mounted)setState(()=>busy=false);}
@@ -210,6 +212,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         output='';
         message='تم استخراج النص من المستند. اضغط ترجمة.';
       });
+      }
     } catch(e) {
       if(mounted)setState(()=>message='تعذر قراءة المستند: $e');
     } finally {if(mounted)setState(()=>busy=false);}
