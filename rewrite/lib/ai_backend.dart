@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 class AiBackend {
   static Uri validate(String endpoint) {
     final uri=Uri.tryParse(endpoint.trim());
-    if(uri==null||uri.scheme!='https'||uri.host.isEmpty||uri.userInfo.isNotEmpty) {
+    if(uri==null||uri.scheme!='https'||uri.host.isEmpty||uri.userInfo.isNotEmpty||uri.hasFragment) {
       throw const FormatException('يتطلب عنوان HTTPS صالحًا لخادم المعالجة');
     }
     return uri;
@@ -27,7 +27,7 @@ class AiBackend {
     final response=await http.Response.fromStream(streamed);
     if(response.statusCode!=200)throw StateError('تعذر تفريغ الصوت: HTTP ${response.statusCode}');
     final data=jsonDecode(utf8.decode(response.bodyBytes));
-    if(data is! Map||data['result'] is! String) {
+    if(data is! Map||data['result'] is! String||(data['result'] as String).trim().isEmpty) {
       throw const FormatException('استجابة غير صالحة من خدمة التفريغ');
     }
     return data['result'] as String;
@@ -48,7 +48,7 @@ class AiBackend {
     final response=await http.Response.fromStream(streamed);
     if(response.statusCode!=200)throw StateError('تعذر استخراج النص العربي: HTTP ${response.statusCode}');
     final data=jsonDecode(utf8.decode(response.bodyBytes));
-    if(data is! Map||data['result'] is! String) {
+    if(data is! Map||data['result'] is! String||(data['result'] as String).trim().isEmpty) {
       throw const FormatException('استجابة OCR غير صالحة');
     }
     return data['result'] as String;
