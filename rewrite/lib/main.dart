@@ -241,33 +241,12 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             crossAxisAlignment:CrossAxisAlignment.start,children:[
               Text('ترجم، تعلّم، وتحدث',style:Theme.of(context).textTheme.titleLarge),
               const SizedBox(height:6),
-              const Text('عربي ↔ إنجليزي محليًا، وبقية اللغات عبر الإنترنت'),
+              const Text('ترجمة عربي ↔ إنجليزي على الجهاز بعد تنزيل النماذج مرة واحدة'),
             ]))),
         const SizedBox(height:16),
-        SegmentedButton<bool>(segments:const [
-          ButtonSegment(value:true,label:Text('محلي'),icon:Icon(Icons.wifi_off)),
-          ButtonSegment(value:false,label:Text('إنترنت'),icon:Icon(Icons.wifi))],
-          selected:{offline},onSelectionChanged:(s)=>setState((){
-            offline=s.first;source='ar';target='en';output='';
-          })),
-        if(!offline) Card(child:Padding(padding:const EdgeInsets.all(12),
-          child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-            const Text('محرك الترجمة المتصلة'),
-            DropdownButton<OnlineEngine>(
-              value:engine,isExpanded:true,
-              items:const [
-                DropdownMenuItem(value:OnlineEngine.myMemory,child:Text('MyMemory')),
-                DropdownMenuItem(value:OnlineEngine.libreTranslate,child:Text('LibreTranslate (خادم خاص)')),
-              ],
-              onChanged:busy?null:(v){if(v!=null){setState(()=>engine=v);_saveEngine();}},
-            ),
-            if(engine==OnlineEngine.libreTranslate) TextField(
-              controller:engineEndpoint,
-              keyboardType:TextInputType.url,
-              decoration:const InputDecoration(
-                labelText:'رابط HTTPS لنقطة /translate',
-                hintText:'https://example.com/translate')),
-          ]))),
+        const Card(child:Padding(padding:EdgeInsets.all(12),
+          child:Row(children:[Icon(Icons.phonelink_off),SizedBox(width:8),
+            Expanded(child:Text('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة'))]))),
         if(offline) OutlinedButton.icon(onPressed:busy?null:download,
           icon:const Icon(Icons.download),label:const Text('تنزيل العربية والإنجليزية')),
         Row(children:[
