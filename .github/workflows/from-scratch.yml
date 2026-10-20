@@ -55,6 +55,16 @@ jobs:
           PY
       - name: Check optional Python backend syntax
         run: python3 -m py_compile backend/app.py
+      - name: Bundle on-device Arabic and English OCR models
+        run: |
+          mkdir -p assets/tessdata
+          for lang in ara eng; do
+            curl --fail --location --retry 3 --silent --show-error \
+              "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/${lang}.traineddata" \
+              --output "assets/tessdata/${lang}.traineddata"
+            test "$(wc -c < "assets/tessdata/${lang}.traineddata")" -gt 100000
+          done
+          test -s assets/tessdata_config.json
       - name: Resolve
         run: flutter pub get
       - name: Analyze
