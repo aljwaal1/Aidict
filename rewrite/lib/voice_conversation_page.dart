@@ -39,12 +39,14 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
       if (!mounted) return;
       setState(() => listening = true);
       await speech.listen(
-        localeId: language == 'ar' ? 'ar' : 'en_US',
         onResult: (event) {
           if (mounted) setState(() => recognized = event.recognizedWords);
         },
-        listenFor: const Duration(seconds: 45),
-        pauseFor: const Duration(seconds: 4),
+        options: stt.SpeechListenOptions(
+          localeId: language == 'ar' ? 'ar' : 'en_US',
+          listenFor: const Duration(seconds: 45),
+          pauseFor: const Duration(seconds: 4),
+        ),
       );
     } catch (e) {
       if (mounted) setState(() => message = '$e');
@@ -75,7 +77,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
 
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('محادثة صوتية بين شخصين')),
-    body: ListView(padding: const EdgeInsets.all(16), children: [
+    body: Directionality(textDirection:TextDirection.rtl,child:ListView(padding: const EdgeInsets.all(16), children: [
       const Text('التعرف على الصوت قد يحتاج الإنترنت بحسب خدمات الجهاز. اضغط على المتحدث ثم ترجمة ونطق.'),
       const SizedBox(height: 20),
       Row(children: [
@@ -115,6 +117,6 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
         },icon:const Icon(Icons.volume_up),label:const Text('إعادة النطق')),
       ]),
       if (message.isNotEmpty) Text(message),
-    ]),
+    ])),
   );
 }
