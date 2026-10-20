@@ -17,6 +17,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
   bool busy=false;
   String result='', error='';
   bool _endpointLoaded=false;
+  bool _endpointEdited=false;
   @override void initState(){
     super.initState();
     text.text=widget.initialText;
@@ -24,7 +25,10 @@ class _AiToolsPageState extends State<AiToolsPage> {
   }
   Future<void> _loadEndpoint() async {
     final prefs=await SharedPreferences.getInstance();
-    if(mounted){endpoint.text=prefs.getString(endpointKey)??'';setState(()=>_endpointLoaded=true);}
+    if(mounted){
+      if(!_endpointEdited)endpoint.text=prefs.getString(endpointKey)??'';
+      setState(()=>_endpointLoaded=true);
+    }
   }
   Future<void> _saveEndpoint() async {
     final uri=AiBackend.validate(endpoint.text);
@@ -78,6 +82,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
         'المفاتيح تُحفظ في الخادم فقط.'),
       const SizedBox(height:12),
       TextField(controller:endpoint,keyboardType:TextInputType.url,
+        onChanged:(_)=>_endpointEdited=true,
         decoration:const InputDecoration(
           labelText:'رابط خدمة المعالجة HTTPS',
           hintText:'https://example.com/v1/aidict',
