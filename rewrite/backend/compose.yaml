@@ -1,0 +1,20 @@
+services:
+  aidict-backend:
+    build: .
+    init: true
+    ports:
+      - "127.0.0.1:8765:8765"
+    environment:
+      AIDICT_ACCESS_TOKEN: ${AIDICT_ACCESS_TOKEN:?Set the required token in your environment}
+      AIDICT_WHISPER_MODEL: small
+      AIDICT_OLLAMA_URL: http://host.docker.internal:11434
+      AIDICT_OLLAMA_MODEL: ${AIDICT_OLLAMA_MODEL:-}
+      HF_HOME: /home/aidict/.cache/huggingface
+    volumes:
+      - whisper-cache:/home/aidict/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 4g
+    restart: unless-stopped
+volumes:
+  whisper-cache:
