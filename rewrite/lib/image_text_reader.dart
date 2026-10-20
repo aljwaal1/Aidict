@@ -1,5 +1,6 @@
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
+import 'package:tesseract_ocr/tesseract_ocr.dart';
+import 'package:tesseract_ocr/ocr_engine_config.dart';
 
 /// Arabic and English OCR runs on Android using bundled Tesseract assets.
 /// No image data is uploaded or sent to a remote OCR service.
@@ -9,10 +10,9 @@ class ImageTextReader {
       source:camera?ImageSource.camera:ImageSource.gallery,
       imageQuality:90);
     if(photo==null)return null;
-    final result=await FlutterTesseractOcr.extractText(
+    final result=await TesseractOcr.extractText(
       photo.path,
-      language:'ara+eng',
-      args:{'psm':'3','preserve_interword_spaces':'1'},
+      config:OCRConfig(language:'ara+eng',engine:OCREngine.tesseract),
     );
     if(result.trim().isEmpty){
       throw const FormatException('لم يعثر OCR المحلي على نص واضح في الصورة');
