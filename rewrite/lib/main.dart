@@ -291,7 +291,19 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         ]),
         ExpansionTile(title:const Text('قاموس عربي–إنجليزي'),children:[
           TextField(onChanged:(v)=>setState(()=>dictionaryQuery=v),decoration:const InputDecoration(hintText:'ابحث عن كلمة',border:OutlineInputBorder())),
-          if(dictionaryQuery.trim().isNotEmpty)Padding(padding:const EdgeInsets.all(12),child:Text(findWord(dictionaryQuery)??'لم تُعثر على الكلمة في القاموس المصغر')),
+          if(dictionaryQuery.trim().isNotEmpty)
+            ...searchWords(dictionaryQuery,limit:12).map((entry)=>ListTile(
+              title:Text(entry.key),subtitle:Text(entry.value),
+              onTap:()=>setState((){
+                input.text=entry.key;
+                output=entry.value;
+                source='en';target='ar';
+                message='تم اختيار الكلمة من القاموس';
+              }),
+            )),
+          if(dictionaryQuery.trim().isNotEmpty&&searchWords(dictionaryQuery).isEmpty)
+            const Padding(padding:EdgeInsets.all(12),
+              child:Text('لا توجد نتائج في القاموس المحلي المصغر.')),
         ]),
       ]));
   }
