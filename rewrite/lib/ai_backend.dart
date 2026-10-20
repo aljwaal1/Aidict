@@ -13,7 +13,7 @@ class AiBackend {
     }
     return uri;
   }
-  static Future<String?> transcribeAudio({required String endpoint}) async {
+  static Future<String?> transcribeAudio({required String endpoint,String accessToken=''}) async {
     final uri=validate(endpoint);
     const types=XTypeGroup(label:'Audio',extensions:['mp3','wav','m4a','aac','ogg','flac']);
     final file=await openFile(acceptedTypeGroups:[types]);
@@ -22,6 +22,7 @@ class AiBackend {
       throw const FormatException('الحد الأقصى للتسجيل 12 ميغابايت');
     }
     final request=http.MultipartRequest('POST',uri);
+    if(accessToken.trim().isNotEmpty)request.headers['Authorization']='Bearer ${accessToken.trim()}';
     request.fields['task']='transcribe';
     request.files.add(http.MultipartFile.fromBytes('audio',await file.readAsBytes(),filename:file.name));
     final streamed=await request.send().timeout(const Duration(seconds:90));
@@ -34,7 +35,7 @@ class AiBackend {
     return data['result'] as String;
   }
   /// Arabic/multilingual OCR requires an external OCR-capable endpoint.
-  static Future<String?> recognizeImage({required String endpoint,required bool camera}) async {
+  static Future<String?> recognizeImage({required String endpoint,required bool camera,String accessToken=''}) async {
     final uri=validate(endpoint);
     final image=await ImagePicker().pickImage(
       source:camera?ImageSource.camera:ImageSource.gallery,imageQuality:90);
@@ -56,7 +57,7 @@ class AiBackend {
     return data['result'] as String;
   }
   static Future<String> process({required String endpoint,required String task,
-    required String text,String language='ar'}) async {
+    required String text,String language='ar',String accessToken=''}) async {
     if(!const {'rewrite','proofread','summarize'}.contains(task)) {
       throw const FormatException('نوع معالجة غير مدعوم');
     }
@@ -65,7 +66,8 @@ class AiBackend {
     }
     final uri=validate(endpoint);
     final response=await http.post(uri,
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json',
+        if(accessToken.trim().isNotEmpty)'Authorization':'Bearer ${accessToken.trim()}'},
       body:jsonEncode({'task':task,'text':text,'language':language}))
         .timeout(const Duration(seconds:120));
     if(response.statusCode!=200) {
