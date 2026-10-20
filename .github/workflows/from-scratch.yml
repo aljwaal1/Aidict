@@ -99,6 +99,9 @@ jobs:
         run: |
           test -s build/app/outputs/flutter-apk/app-debug.apk
           sha256sum build/app/outputs/flutter-apk/app-debug.apk
+          unzip -l build/app/outputs/flutter-apk/app-debug.apk | grep -E 'flutter_assets/assets/tessdata/(ara|eng)\.traineddata' > ocr-assets.txt
+          grep -q 'ara.traineddata' ocr-assets.txt
+          grep -q 'eng.traineddata' ocr-assets.txt
       - name: Report build failure
         if: failure()
         continue-on-error: true
