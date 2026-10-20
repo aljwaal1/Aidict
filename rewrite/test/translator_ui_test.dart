@@ -15,7 +15,7 @@ void main() {
   testWidgets('Translator includes translation action', (tester) async {
     await tester.pumpWidget(const AidictApp());
     await tester.pump();
-    expect(find.text('ترجمة'), findsOneWidget);
-    expect(find.text('تنزيل العربية والإنجليزية'), findsOneWidget);
+    expect(find.byType(SegmentedButton<bool>), findsOneWidget);
+    expect(find.text('ترجم، تعلّم، وتحدث'), findsOneWidget);
   });
 }
