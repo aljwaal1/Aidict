@@ -12,7 +12,7 @@ pip install -r requirements.txt
 export AIDICT_ACCESS_TOKEN='replace-with-a-strong-secret'
 uvicorn app:app --host 127.0.0.1 --port 8765
 ```
-Expose over HTTPS through your own authenticated reverse proxy. The Android app currently does **not** send bearer tokens; if you use a shared-secret proxy, configure the proxy to authenticate independently or extend the client and store tokens securely. Do not expose an unauthenticated service publicly.
+Expose over HTTPS through your own authenticated reverse proxy. The Android app supports an **optional session-only Bearer token** in Advanced Tools. Enter the value of `AIDICT_ACCESS_TOKEN` in the masked field; it is not persisted. Do not hardcode credentials or put this reference backend on the public internet without HTTPS, request limits, and an authenticated reverse proxy. Do not expose an unauthenticated service publicly.
 
 Endpoints match the mobile `AiBackend` contract: POST /v1/aidict multipart `task=ocr,image=` or `task=transcribe,audio=`; JSON `task=rewrite|proofread|summarize,text,language`. All successful responses: `{"result":"..."}`.
 
