@@ -79,7 +79,7 @@ jobs:
               data=data.replace('JavaVersion.VERSION_11', 'JavaVersion.VERSION_17')
               data=data.replace('jvmTarget = "11"', 'jvmTarget = "17"')
               data=data.replace("jvmTarget = '11'", "jvmTarget = '17'")
-              data += "\\nafterEvaluate { tasks.withType(JavaCompile).configureEach { sourceCompatibility = '17'; targetCompatibility = '17' } }\\n"
+              data += chr(10) + "afterEvaluate { tasks.withType(JavaCompile).configureEach { sourceCompatibility = '17'; targetCompatibility = '17' } }" + chr(10)
               plugin.write_text(data)
               print(f'Patched: {plugin}')
           PY
