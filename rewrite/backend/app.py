@@ -1,4 +1,5 @@
 import io
+import hmac
 import os
 from functools import lru_cache
 
@@ -22,7 +23,7 @@ class TextTask(BaseModel):
 
 def check_token(value: str | None) -> None:
     configured = os.environ.get("AIDICT_ACCESS_TOKEN")
-    if configured and not __import__("hmac").compare_digest(value or "", f"Bearer {configured}"):
+    if configured and not hmac.compare_digest(value or "", f"Bearer {configured}"):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
