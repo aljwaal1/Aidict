@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'ai_backend.dart';
+import 'offline_writing_tools.dart';
 
 /// User-owned HTTPS processing endpoint; no provider tokens are bundled.
 class AiToolsPage extends StatefulWidget {
@@ -28,6 +29,19 @@ class _AiToolsPageState extends State<AiToolsPage> {
     final uri=AiBackend.validate(endpoint.text);
     final prefs=await SharedPreferences.getInstance();
     await prefs.setString(endpointKey,uri.toString());
+  }
+  void runOffline(bool summarize) {
+    final source=text.text.trim();
+    if(source.isEmpty) {
+      setState(()=>error='أدخل النص أولًا');
+      return;
+    }
+    setState((){
+      error='';
+      result=summarize
+        ? OfflineWritingTools.extractiveSummary(source)
+        : OfflineWritingTools.proofreadFormatting(source);
+    });
   }
   Future<void> runOcr(bool camera) async {
     if(busy)return;
@@ -57,7 +71,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('المستندات والصوت والذكاء الاصطناعي')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      const Text('الخدمات التالية تحتاج خادم معالجة HTTPS تملكه أو تثق به. '
+      const Text('الميزات المتقدمة تحتاج خادم معالجة HTTPS تملكه أو تثق به. '
         'لن تُرسل أي بيانات حتى تضغط زر المعالجة. لا تدخل مفتاح API هنا؛ '
         'المفاتيح تُحفظ في الخادم فقط.'),
       const SizedBox(height:12),
@@ -70,6 +84,16 @@ class _AiToolsPageState extends State<AiToolsPage> {
       TextField(controller:text,maxLines:6,minLines:3,
         decoration:const InputDecoration(labelText:'النص',border:OutlineInputBorder())),
       const SizedBox(height:12),
+      Text('أدوات مجانية دون إنترنت',style:Theme.of(context).textTheme.titleMedium),
+      Wrap(spacing:8,runSpacing:8,children:[
+        FilledButton.icon(onPressed:busy?null:()=>runOffline(true),
+          icon:const Icon(Icons.short_text),label:const Text('تلخيص استخراجي محلي')),
+        OutlinedButton.icon(onPressed:busy?null:()=>runOffline(false),
+          icon:const Icon(Icons.format_align_left),label:const Text('تنسيق النص محليًا')),
+      ]),
+      const Text('التلخيص المحلي يختار جملًا من النص الأصلي، وليس إعادة صياغة بالذكاء الاصطناعي.'),
+      const Divider(height:30),
+      Text('ميزات متقدمة عبر خادم اختياري',style:Theme.of(context).textTheme.titleMedium),
       Wrap(spacing:8,runSpacing:8,children:[
         FilledButton.icon(onPressed:busy?null:()=>run('rewrite'),
           icon:const Icon(Icons.edit_note),label:const Text('إعادة صياغة')),
