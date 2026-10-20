@@ -42,7 +42,7 @@ class AiBackend {
     if(await image.length()>12*1024*1024) {
       throw const FormatException('حجم الصورة أكبر من 12 ميغابايت');
     }
-    final request=http.MultipartRequest('POST',validate(endpoint));
+    final request=http.MultipartRequest('POST',uri);
     request.fields['task']='ocr';
     request.files.add(http.MultipartFile.fromBytes('image',await image.readAsBytes(),
       filename:image.name));
