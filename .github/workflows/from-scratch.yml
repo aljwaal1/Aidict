@@ -67,6 +67,18 @@ jobs:
           test -s assets/tessdata_config.json
       - name: Resolve
         run: flutter pub get
+      - name: Patch obsolete Android plugin repositories
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          cache=Path.home()/'.pub-cache'/'hosted'/'pub.dev'
+          for plugin in cache.glob('tesseract_ocr-*/android/build.gradle'):
+              data=plugin.read_text()
+              data=data.replace('jcenter()', 'mavenCentral()')
+              plugin.write_text(data)
+              print(f'Patched: {plugin}')
+          PY
       - name: Analyze
         run: flutter analyze --no-fatal-infos
       - name: Test
