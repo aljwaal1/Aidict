@@ -52,7 +52,17 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   OnlineEngine engine=OnlineEngine.myMemory;
   final engineEndpoint=TextEditingController();
   @override void initState(){super.initState();input.addListener(_refreshInputStats);_restoreSettings();}
-  void _refreshInputStats(){if(mounted)setState((){});}
+  void _refreshInputStats(){
+    if(!mounted)return;
+    // A previously translated result must not be presented as the translation
+    // of newly edited source text.
+    if(output.isNotEmpty && input.text!=_translatedInput){
+      setState((){output='';message='تم تغيير النص؛ اضغط ترجمة مجددًا';});
+    }else{
+      setState((){});
+    }
+  }
+  String _translatedInput='';
   Future<void> _restoreSettings() async {
     final prefs=await SharedPreferences.getInstance();
     final saved=prefs.getString('aidict.engine.v1');
@@ -125,7 +135,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     if(!mounted||selected==null)return;
     final parts=selected.split(' | ');
     if(parts.length>=3){
-      setState((){input.text=parts.sublist(1,parts.length-1).join(' | ');output=parts.last;message='تم استرجاع الترجمة المحفوظة';});
+      setState((){input.text=parts.sublist(1,parts.length-1).join(' | ');_translatedInput=input.text;output=parts.last;message='تم استرجاع الترجمة المحفوظة';});
     }else{
       setState((){input.text=selected;output='';message='تم استرجاع النص المحفوظ';});
     }
@@ -157,7 +167,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   void clearText() => setState(() {input.clear();output='';message='';});
   void reverseLanguages() => setState(() {
     final previous=source;source=target;target=previous;
-    if(output.isNotEmpty){final old=input.text;input.text=output;output=old;}
+    if(output.isNotEmpty){final old=input.text;input.text=output;output=old;_translatedInput=input.text;}
   });
   Future<void> translate() async {
     if(busy||input.text.trim().isEmpty)return;
@@ -168,7 +178,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       final text=input.text.trim();
       final result=offline?await local(text):await online(text);
       if(mounted){
-        setState(()=>output=result);
+        setState((){_translatedInput=text;output=result;});
         await SavedTranslations.add('$source → $target | $text | $result');
       }
     } catch(e) {
@@ -329,6 +339,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
               onTap:()=>setState((){
                 input.text=entry.key;
                 output=entry.value;
+                _translatedInput=entry.key;
                 source='en';target='ar';
                 message='تم اختيار الكلمة من القاموس';
               }),
