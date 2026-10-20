@@ -11,6 +11,7 @@ import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
 import 'ai_tools_page.dart';
 import 'translation_engine.dart';
+import 'speech_locales.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(const AidictApp());
@@ -221,7 +222,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   Future<void> speakTranslation() async {
     if(output.trim().isEmpty)return;
     try {
-      await tts.setLanguage(target=='ar'?'ar':'en-US');
+      await tts.setLanguage(SpeechLocales.forLanguage(target));
       await tts.speak(output);
     } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
   }
