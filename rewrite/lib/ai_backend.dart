@@ -14,13 +14,14 @@ class AiBackend {
     return uri;
   }
   static Future<String?> transcribeAudio({required String endpoint}) async {
+    final uri=validate(endpoint);
     const types=XTypeGroup(label:'Audio',extensions:['mp3','wav','m4a','aac','ogg','flac']);
     final file=await openFile(acceptedTypeGroups:[types]);
     if(file==null)return null;
     if(await file.length()>12*1024*1024) {
       throw const FormatException('الحد الأقصى للتسجيل 12 ميغابايت');
     }
-    final request=http.MultipartRequest('POST',validate(endpoint));
+    final request=http.MultipartRequest('POST',uri);
     request.fields['task']='transcribe';
     request.files.add(http.MultipartFile.fromBytes('audio',await file.readAsBytes(),filename:file.name));
     final streamed=await request.send().timeout(const Duration(seconds:90));
@@ -34,6 +35,7 @@ class AiBackend {
   }
   /// Arabic/multilingual OCR requires an external OCR-capable endpoint.
   static Future<String?> recognizeImage({required String endpoint,required bool camera}) async {
+    final uri=validate(endpoint);
     final image=await ImagePicker().pickImage(
       source:camera?ImageSource.camera:ImageSource.gallery,imageQuality:90);
     if(image==null)return null;
@@ -65,7 +67,7 @@ class AiBackend {
     final response=await http.post(uri,
       headers:{'Content-Type':'application/json'},
       body:jsonEncode({'task':task,'text':text,'language':language}))
-        .timeout(const Duration(seconds:45));
+        .timeout(const Duration(seconds:120));
     if(response.statusCode!=200) {
       throw StateError('فشلت المعالجة: HTTP ${response.statusCode}');
     }
