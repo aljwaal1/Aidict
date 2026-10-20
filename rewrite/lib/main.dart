@@ -51,7 +51,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   bool offline=true, busy=false;
   OnlineEngine engine=OnlineEngine.myMemory;
   final engineEndpoint=TextEditingController();
-  @override void initState(){super.initState();_restoreSettings();}
+  @override void initState(){super.initState();input.addListener(_refreshInputStats);_restoreSettings();}
+  void _refreshInputStats(){if(mounted)setState((){});}
   Future<void> _restoreSettings() async {
     final prefs=await SharedPreferences.getInstance();
     final saved=prefs.getString('aidict.engine.v1');
@@ -131,7 +132,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   }
   void showDocumentPreview() {
     final text=TextPreparation.normalize(input.text);
-    if(text.isEmpty) return;
+    if(text.isEmpty) {return;}
     showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
       title:const Text('معاينة النص المستخرج'),
       content:SizedBox(width:500,child:SingleChildScrollView(
@@ -160,6 +161,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   });
   Future<void> translate() async {
     if(busy||input.text.trim().isEmpty)return;
+    if(source==target){setState(()=>message='اختر لغتين مختلفتين للترجمة');return;}
     setState((){busy=true;message='';});
     try {
       if(!offline)await _saveEngine();
@@ -201,6 +203,11 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       if(mounted)setState(()=>message='تعذر قراءة المستند: $e');
     } finally {if(mounted)setState(()=>busy=false);}
   }
+  Future<void> shareTranslation() async {
+    if(output.trim().isEmpty)return;
+    await Clipboard.setData(ClipboardData(text:'${input.text}\n\n$output'));
+    if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تم نسخ النص والترجمة معًا')));
+  }
   Future<void> speakTranslation() async {
     if(output.trim().isEmpty)return;
     try {
@@ -208,7 +215,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       await tts.speak(output);
     } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
   }
-  @override void dispose(){input.dispose();engineEndpoint.dispose();tts.stop();super.dispose();}
+  @override void dispose(){input.removeListener(_refreshInputStats);input.dispose();engineEndpoint.dispose();tts.stop();super.dispose();}
   @override Widget build(BuildContext context) {
     final languages=offline?const ['ar','en']:const ['ar','en','sv','fr','de','es','tr'];
     return Scaffold(
@@ -255,7 +262,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             initialValue:source,
             items:languages.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
             onChanged:busy?null:(v)=>setState((){
-              if(v==null)return;source=v;if(offline)target=v=='ar'?'en':'ar';
+              if(v==null){return;} source=v;if(offline){target=v=='ar'?'en':'ar';}
             }))),
           IconButton(tooltip:'تبديل اللغات والنصوص',onPressed:busy?null:reverseLanguages,icon:const Icon(Icons.swap_horiz)),
           Expanded(child:DropdownButtonFormField<String>(
@@ -263,7 +270,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             initialValue:target,
             items:languages.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
             onChanged:busy?null:(v)=>setState((){
-              if(v==null)return;target=v;if(offline)source=v=='ar'?'en':'ar';
+              if(v==null){return;} target=v;if(offline){source=v=='ar'?'en':'ar';}
             }))),
         ]),
         const SizedBox(height:16),
@@ -298,7 +305,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             Wrap(children:[
               IconButton(tooltip:'الاستماع للترجمة',onPressed:speakTranslation,icon:const Icon(Icons.volume_up)),
               IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
-              IconButton(tooltip:'نسخ النص والترجمة معًا',onPressed:()=>Clipboard.setData(ClipboardData(text:'${input.text}\n\n$output')),icon:const Icon(Icons.content_copy)),
+              IconButton(tooltip:'نسخ النص والترجمة معًا',onPressed:shareTranslation,icon:const Icon(Icons.content_copy)),
               IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
             ]),
           ]))),
