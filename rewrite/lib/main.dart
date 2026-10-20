@@ -298,7 +298,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             Wrap(children:[
               IconButton(tooltip:'الاستماع للترجمة',onPressed:speakTranslation,icon:const Icon(Icons.volume_up)),
               IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
-              IconButton(tooltip:'مشاركة',onPressed:()=>Clipboard.setData(ClipboardData(text:'${input.text}\n\n$output')),icon:const Icon(Icons.content_copy)),
+              IconButton(tooltip:'نسخ النص والترجمة معًا',onPressed:()=>Clipboard.setData(ClipboardData(text:'${input.text}\n\n$output')),icon:const Icon(Icons.content_copy)),
               IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
             ]),
           ]))),
