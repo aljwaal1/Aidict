@@ -11,6 +11,7 @@ import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
 import 'ai_tools_page.dart';
 import 'translation_engine.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(const AidictApp());
 class AidictApp extends StatefulWidget {
@@ -19,13 +20,23 @@ class AidictApp extends StatefulWidget {
 }
 class _AidictAppState extends State<AidictApp> {
   bool dark = false;
+  @override void initState(){super.initState();_restore();}
+  Future<void> _restore() async {
+    final prefs=await SharedPreferences.getInstance();
+    if(mounted)setState(()=>dark=prefs.getBool('aidict.dark.v1')??false);
+  }
+  Future<void> _toggleTheme() async {
+    setState(()=>dark=!dark);
+    final prefs=await SharedPreferences.getInstance();
+    await prefs.setBool('aidict.dark.v1',dark);
+  }
   @override Widget build(BuildContext context) => MaterialApp(
     title:'Aidict', debugShowCheckedModeBanner:false,
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     theme: ThemeData(useMaterial3:true,colorSchemeSeed:const Color(0xFF007F86),scaffoldBackgroundColor:const Color(0xFFF5F9FA),appBarTheme:const AppBarTheme(centerTitle:false),cardTheme:CardThemeData(elevation:0,color:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
     darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorSchemeSeed:const Color(0xFF22BDC2),cardTheme:const CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
     home: Directionality(textDirection:TextDirection.rtl,
-      child: TranslatorScreen(toggleTheme:()=>setState(()=>dark=!dark))),
+      child: TranslatorScreen(toggleTheme:_toggleTheme)),
   );
 }
 class TranslatorScreen extends StatefulWidget {
@@ -40,6 +51,18 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   bool offline=true, busy=false;
   OnlineEngine engine=OnlineEngine.myMemory;
   final engineEndpoint=TextEditingController();
+  @override void initState(){super.initState();_restoreSettings();}
+  Future<void> _restoreSettings() async {
+    final prefs=await SharedPreferences.getInstance();
+    final saved=prefs.getString('aidict.engine.v1');
+    engineEndpoint.text=prefs.getString('aidict.libre.url.v1')??'';
+    if(mounted&&saved=='libreTranslate')setState(()=>engine=OnlineEngine.libreTranslate);
+  }
+  Future<void> _saveEngine() async {
+    final prefs=await SharedPreferences.getInstance();
+    await prefs.setString('aidict.engine.v1',engine.name);
+    await prefs.setString('aidict.libre.url.v1',engineEndpoint.text.trim());
+  }
   bool get hasTranslation => output.trim().isNotEmpty;
   String dictionaryQuery='';
   String source='ar',target='en',output='',message='';
@@ -139,6 +162,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     if(busy||input.text.trim().isEmpty)return;
     setState((){busy=true;message='';});
     try {
+      if(!offline)await _saveEngine();
       final text=input.text.trim();
       final result=offline?await local(text):await online(text);
       if(mounted){
@@ -214,7 +238,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                 DropdownMenuItem(value:OnlineEngine.myMemory,child:Text('MyMemory')),
                 DropdownMenuItem(value:OnlineEngine.libreTranslate,child:Text('LibreTranslate (خادم خاص)')),
               ],
-              onChanged:busy?null:(v){if(v!=null)setState(()=>engine=v);},
+              onChanged:busy?null:(v){if(v!=null){setState(()=>engine=v);_saveEngine();}},
             ),
             if(engine==OnlineEngine.libreTranslate) TextField(
               controller:engineEndpoint,
@@ -274,6 +298,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             Wrap(children:[
               IconButton(tooltip:'الاستماع للترجمة',onPressed:speakTranslation,icon:const Icon(Icons.volume_up)),
               IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
+              IconButton(tooltip:'مشاركة',onPressed:()=>Clipboard.setData(ClipboardData(text:'${input.text}\n\n$output')),icon:const Icon(Icons.content_copy)),
               IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
             ]),
           ]))),
