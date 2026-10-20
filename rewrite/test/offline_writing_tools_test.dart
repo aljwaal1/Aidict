@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:aidict/offline_writing_tools.dart';
 void main(){
   test('Offline formatting retains Arabic content',(){
-    expect(OfflineWritingTools.proofreadFormatting('مرحبا   بك\\r\\n\\r\\n\\r\\nأهلا'),'مرحبا بك\\n\\nأهلا');
+    expect(OfflineWritingTools.proofreadFormatting('مرحبا   بك\r\n\r\n\r\nأهلا'),'مرحبا بك\n\nأهلا');
   });
   test('Summary is extractive and deterministic',(){
     const source='The cat is on the mat. The mat is soft. The dog runs outside. The cat sleeps.';
