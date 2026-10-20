@@ -4,7 +4,8 @@ from functools import lru_cache
 
 import httpx
 import pytesseract
-from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi import FastAPI, Header, HTTPException, Request
+from starlette.datastructures import UploadFile
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
