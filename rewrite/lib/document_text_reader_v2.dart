@@ -40,7 +40,12 @@ class DocumentTextReaderV2 {
             await file.writeAsBytes(image.bytes,flush:true);
             final recognized=await TesseractOcr.extractText(file.path,
               config:const OCRConfig(language:'ara+eng',engine:OCREngine.tesseract));
-            if(recognized.trim().isNotEmpty)parts.add(recognized.trim());
+            if(recognized.trim().isNotEmpty){
+              parts.add(recognized.trim());
+              if(parts.join('\n').length>maxCharacters){
+                throw const FormatException('نص PDF المستخرج تجاوز 40000 حرف');
+              }
+            }
           }finally{
             if(await file.exists())await file.delete();
           }
@@ -50,6 +55,16 @@ class DocumentTextReaderV2 {
     return parts.join('\\n\\n');
   }
 
+
+  /// Extract selectable PDF text first and OCR scanned-only PDFs on-device.
+  static Future<String> extractPdfText(List<int> bytes) async {
+    final pdf=PdfDocument(inputBytes:bytes);
+    String result;
+    try {result=PdfTextExtractor(pdf).extractText();}
+    finally {pdf.dispose();}
+    if(result.trim().isEmpty)result=await extractScannedPdf(bytes);
+    return result.trim();
+  }
 
   static Future<String?> selectAndExtract() async {
     const type=XTypeGroup(label:'Documents',extensions:['pdf','docx','txt']);
@@ -65,10 +80,7 @@ class DocumentTextReaderV2 {
         result=utf8.decode(bytes,allowMalformed:true);
         break;
       case 'pdf':
-        final pdf=PdfDocument(inputBytes:bytes);
-        try {result=PdfTextExtractor(pdf).extractText();}
-        finally {pdf.dispose();}
-        if(result.trim().isEmpty)result=await extractScannedPdf(bytes);
+        result=await extractPdfText(bytes);
         break;
       case 'docx':
         final zip=ZipDecoder().decodeBytes(bytes);
