@@ -158,7 +158,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   void openAiTools() {
     Navigator.push<void>(context,MaterialPageRoute<void>(
       builder:(_)=>AiToolsPage(initialText:input.text,onResult:(value){
-        if(mounted)setState((){
+        if(mounted) { setState((){
           input.text=value;
           output='';
           message='تم استيراد نتيجة المعالجة';
@@ -191,7 +191,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     setState((){busy=true;message='';});
     try {
       final text=await ImageTextReader.selectAndExtract(camera:camera);
-      if(text!=null&&mounted)setState((){
+      if(text!=null&&mounted) { setState((){
         input.text=text;
         output='';
         message='تم استخراج النص من الصورة. اضغط ترجمة.';
@@ -205,7 +205,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     setState((){busy=true;message='';});
     try {
       final text=await DocumentTextReaderV2.selectAndExtract();
-      if(text!=null&&mounted)setState((){
+      if(text!=null&&mounted) { setState((){
         input.text=text;
         output='';
         message='تم استخراج النص من المستند. اضغط ترجمة.';
