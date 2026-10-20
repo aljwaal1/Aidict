@@ -81,6 +81,12 @@ jobs:
               data=data.replace("jvmTarget = '11'", "jvmTarget = '17'")
               data += chr(10) + "afterEvaluate { tasks.withType(JavaCompile).configureEach { sourceCompatibility = '17'; targetCompatibility = '17' } }" + chr(10)
               plugin.write_text(data)
+              # Upstream ships two identical plugin classes. The Java class
+              # performs OCR; Kotlin is only the generated placeholder.
+              placeholder=plugin.parent/'src/main/kotlin/io/paratoner/tesseract_ocr/TesseractOcrPlugin.kt'
+              if placeholder.exists():
+                  placeholder.unlink()
+                  print(f'Removed duplicate stub: {placeholder}')
               print(f'Patched: {plugin}')
           PY
       - name: Analyze
