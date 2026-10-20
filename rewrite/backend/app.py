@@ -22,7 +22,7 @@ class TextTask(BaseModel):
 
 def check_token(value: str | None) -> None:
     configured = os.environ.get("AIDICT_ACCESS_TOKEN")
-    if configured and value != f"Bearer {configured}":
+    if configured and not __import__("hmac").compare_digest(value or "", f"Bearer {configured}"):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -61,7 +61,7 @@ async def process_text(data: TextTask) -> dict[str, str]:
                 json={"model": model, "prompt": prompt, "stream": False})
             response.raise_for_status()
             result = response.json().get("response", "").strip()
-    except (httpx.HTTPError, ValueError) as exc:
+    except (httpx.HTTPError, ValueError, KeyError, TypeError, AttributeError) as exc:
         raise HTTPException(status_code=502, detail="Local AI service unavailable") from exc
     if not result:
         raise HTTPException(status_code=502, detail="Empty AI response")
@@ -83,7 +83,16 @@ async def aidict(
         return await process_text(payload)
     if not media_type.startswith("multipart/form-data"):
         raise HTTPException(status_code=415, detail="Expected JSON or multipart")
-    form = await request.form()
+    # Reject oversized requests before multipart decoding; enforce a proxy body
+    # limit as well because a client can omit Content-Length.
+    length = request.headers.get('content-length')
+    if length is not None:
+        try:
+            if int(length) > MAX_FILE_BYTES + 65536:
+                raise HTTPException(status_code=413, detail='Request too large')
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail='Invalid Content-Length') from exc
+    form = await request.form(max_files=1, max_fields=3, max_part_size=MAX_FILE_BYTES)
     task = str(form.get("task", ""))
     if task == "ocr":
         uploaded = form.get("image")
