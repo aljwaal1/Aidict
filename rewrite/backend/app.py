@@ -77,6 +77,11 @@ async def aidict(
     check_token(authorization)
     media_type = request.headers.get("content-type", "").lower()
     if media_type.startswith("application/json"):
+        length = request.headers.get("content-length")
+        if length is not None and length.isdigit() and int(length) > 65536:
+            raise HTTPException(status_code=413, detail="JSON request too large")
+        if len(await request.body()) > 65536:
+            raise HTTPException(status_code=413, detail="JSON request too large")
         try:
             payload = TextTask.model_validate(await request.json())
         except Exception as exc:
@@ -93,7 +98,11 @@ async def aidict(
                 raise HTTPException(status_code=413, detail='Request too large')
         except ValueError as exc:
             raise HTTPException(status_code=400, detail='Invalid Content-Length') from exc
-    form = await request.form(max_files=1, max_fields=3, max_part_size=MAX_FILE_BYTES)
+    async with request.form(max_files=1, max_fields=3, max_part_size=MAX_FILE_BYTES) as form:
+        return await process_multipart(form)
+
+
+async def process_multipart(form) -> dict[str, str]:
     task = str(form.get("task", ""))
     if task == "ocr":
         uploaded = form.get("image")
