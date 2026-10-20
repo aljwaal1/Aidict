@@ -28,6 +28,23 @@ String? findWord(String term) {
   return null;
 }
 
+/// Search local dictionary in both languages without an external request.
+List<MapEntry<String,String>> searchWords(String query,{int limit=30}) {
+  final q=query.trim().toLowerCase();
+  if(q.isEmpty)return [];
+  final exact=<MapEntry<String,String>>[];
+  final prefixes=<MapEntry<String,String>>[];
+  final partial=<MapEntry<String,String>>[];
+  for(final word in words.entries) {
+    final en=word.key.toLowerCase();
+    final ar=word.value.toLowerCase();
+    if(en==q||ar==q){exact.add(word);}
+    else if(en.startsWith(q)||ar.startsWith(q)){prefixes.add(word);}
+    else if(en.contains(q)||ar.contains(q)){partial.add(word);}
+  }
+  return [...exact,...prefixes,...partial].take(limit).toList();
+}
+
 class SavedTranslations {
   static const historyKey='aidict.history.v1';
   static const favoritesKey='aidict.favorites.v1';
@@ -67,8 +84,12 @@ class _LearningScreenState extends State<LearningScreen> {
   List<String> get choices {
     if(index>=entries.length)return [];
     final correct=entries[index].value;
-    final others=entries.where((e)=>e.value!=correct).skip(index%5).take(3).map((e)=>e.value);
-    return [correct,...others];
+    final others=entries.where((e)=>e.value!=correct)
+      .skip((index*7)% (entries.length-3)).take(3).map((e)=>e.value).toList();
+    final list=[correct,...others];
+    // Rotate the correct answer's position, avoiding a predictable first choice.
+    final offset=index%list.length;
+    return [...list.skip(offset),...list.take(offset)];
   }
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('اختبار المفردات')),
