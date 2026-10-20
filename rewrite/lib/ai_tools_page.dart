@@ -16,6 +16,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
   final text=TextEditingController();
   bool busy=false;
   String result='', error='';
+  bool _endpointLoaded=false;
   @override void initState(){
     super.initState();
     text.text=widget.initialText;
@@ -23,7 +24,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
   }
   Future<void> _loadEndpoint() async {
     final prefs=await SharedPreferences.getInstance();
-    if(mounted)endpoint.text=prefs.getString(endpointKey)??'';
+    if(mounted){endpoint.text=prefs.getString(endpointKey)??'';setState(()=>_endpointLoaded=true);}
   }
   Future<void> _saveEndpoint() async {
     final uri=AiBackend.validate(endpoint.text);
@@ -45,6 +46,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
   }
   Future<void> runOcr(bool camera) async {
     if(busy)return;
+    if(!_endpointLoaded){setState(()=>error='انتظر تحميل إعدادات الخدمة');return;}
     setState((){busy=true;error='';result='';});
     try {
       await _saveEndpoint();
