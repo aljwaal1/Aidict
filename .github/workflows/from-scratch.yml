@@ -53,6 +53,8 @@ jobs:
           assert 'android:name="flutterEmbedding"' in xml
           assert 'android:value="2"' in xml
           PY
+      - name: Check optional Python backend syntax
+        run: python3 -m py_compile backend/app.py
       - name: Resolve
         run: flutter pub get
       - name: Analyze
