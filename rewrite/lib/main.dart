@@ -10,7 +10,6 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
 import 'ai_tools_page.dart';
-import 'translation_engine.dart';
 import 'speech_locales.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,10 +48,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   final input=TextEditingController();
   final manager=OnDeviceTranslatorModelManager();
   final FlutterTts tts=FlutterTts();
-  bool offline=true, busy=false;
-  OnlineEngine engine=OnlineEngine.myMemory;
-  final engineEndpoint=TextEditingController();
-  @override void initState(){super.initState();input.addListener(_refreshInputStats);_restoreSettings();}
+  bool busy=false;
+  @override void initState(){super.initState();input.addListener(_refreshInputStats);}
   void _refreshInputStats(){
     if(!mounted)return;
     // A previously translated result must not be presented as the translation
@@ -64,17 +61,6 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     }
   }
   String _translatedInput='';
-  Future<void> _restoreSettings() async {
-    final prefs=await SharedPreferences.getInstance();
-    final saved=prefs.getString('aidict.engine.v1');
-    engineEndpoint.text=prefs.getString('aidict.libre.url.v1')??'';
-    if(mounted&&saved=='libreTranslate')setState(()=>engine=OnlineEngine.libreTranslate);
-  }
-  Future<void> _saveEngine() async {
-    final prefs=await SharedPreferences.getInstance();
-    await prefs.setString('aidict.engine.v1',engine.name);
-    await prefs.setString('aidict.libre.url.v1',engineEndpoint.text.trim());
-  }
   bool get hasTranslation => output.trim().isNotEmpty;
   String dictionaryQuery='';
   String source='ar',target='en',output='',message='';
@@ -110,25 +96,6 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       }
       return translated.join('\n');
     } finally {await t.close();}
-  }
-  Future<String> online(String text,{String? sourceCode,String? targetCode}) async {
-    final results = <String>[];
-    final chunks = TranslationChunks.split(text);
-    for (var index = 0; index < chunks.length; index++) {
-      final chunk = chunks[index];
-      if (mounted) {
-        setState(() => message = 'ترجمة الجزء ${index + 1} من ${chunks.length}');
-      }
-      if (chunk.trim().isEmpty) {
-        results.add(chunk);
-        continue;
-      }
-      final result=await TranslationEngine.translate(
-        text:chunk,source:sourceCode??source,target:targetCode??target,
-        engine:engine,endpoint:engineEndpoint.text);
-      results.add(result);
-    }
-    return results.join('\n');
   }
   Future<void> openSavedTranslations(bool favorites) async {
     final selected=await Navigator.push<String>(context,MaterialPageRoute<String>(
@@ -176,9 +143,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     if(source==target){setState(()=>message='اختر لغتين مختلفتين للترجمة');return;}
     setState((){busy=true;message='';});
     try {
-      if(!offline)await _saveEngine();
       final text=input.text.trim();
-      final result=offline?await local(text):await online(text);
+      final result=await local(text);
       if(mounted){
         setState((){_translatedInput=text;output=result;});
         await SavedTranslations.add('$source → $target | $text | $result');
@@ -229,9 +195,9 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       await tts.speak(output);
     } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
   }
-  @override void dispose(){input.removeListener(_refreshInputStats);input.dispose();engineEndpoint.dispose();tts.stop();super.dispose();}
+  @override void dispose(){input.removeListener(_refreshInputStats);input.dispose();tts.stop();super.dispose();}
   @override Widget build(BuildContext context) {
-    final languages=offline?const ['ar','en']:const ['ar','en','sv','fr','de','es','tr'];
+    const languages=['ar','en'];
     return Scaffold(
       appBar:AppBar(title:const Text('Aidict • المترجم'),
         actions:[IconButton(onPressed:widget.toggleTheme,icon:const Icon(Icons.dark_mode))]),
@@ -247,23 +213,23 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         const Card(child:Padding(padding:EdgeInsets.all(12),
           child:Row(children:[Icon(Icons.phonelink_off),SizedBox(width:8),
             Expanded(child:Text('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة'))]))),
-        if(offline) OutlinedButton.icon(onPressed:busy?null:download,
+        OutlinedButton.icon(onPressed:busy?null:download,
           icon:const Icon(Icons.download),label:const Text('تنزيل العربية والإنجليزية')),
         Row(children:[
           Expanded(child:DropdownButtonFormField<String>(
-            key:ValueKey('source-$offline-$source'),
+            key:ValueKey('source-$source'),
             initialValue:source,
             items:languages.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
             onChanged:busy?null:(v)=>setState((){
-              if(v==null){return;} source=v;if(offline){target=v=='ar'?'en':'ar';}
+              if(v==null){return;} source=v;target=v=='ar'?'en':'ar';
             }))),
           IconButton(tooltip:'تبديل اللغات والنصوص',onPressed:busy?null:reverseLanguages,icon:const Icon(Icons.swap_horiz)),
           Expanded(child:DropdownButtonFormField<String>(
-            key:ValueKey('target-$offline-$target'),
+            key:ValueKey('target-$target'),
             initialValue:target,
             items:languages.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
             onChanged:busy?null:(v)=>setState((){
-              if(v==null){return;} target=v;if(offline){source=v=='ar'?'en':'ar';}
+              if(v==null){return;} target=v;source=v=='ar'?'en':'ar';
             }))),
         ]),
         const SizedBox(height:16),
@@ -308,8 +274,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             final clip=await Clipboard.getData(Clipboard.kTextPlain);
             if(clip?.text!=null)input.text=clip!.text!;
           },icon:const Icon(Icons.paste),label:const Text('لصق')),
-          OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>offline?local(text,sourceCode:s,targetCode:t):online(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:const Text('محادثة صوتية')),
-          OutlinedButton.icon(onPressed:openAiTools,icon:const Icon(Icons.auto_awesome),label:const Text('مساعد الكتابة AI')),
+          OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>local(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:const Text('محادثة صوتية')),
+          OutlinedButton.icon(onPressed:openAiTools,icon:const Icon(Icons.auto_awesome),label:const Text('أدوات الكتابة المحلية')),
           OutlinedButton(onPressed:()=>openSavedTranslations(false),child:const Text('السجل')),
           OutlinedButton(onPressed:()=>openSavedTranslations(true),child:const Text('المفضلة')),
           OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
