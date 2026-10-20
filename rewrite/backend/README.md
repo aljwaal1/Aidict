@@ -4,7 +4,14 @@ This backend replaces *paid APIs*, not the Android offline engine. It runs on a 
 
 Dependencies: Python 3.11+, FastAPI, Uvicorn, python-multipart, Pillow, pytesseract, faster-whisper; system Tesseract OCR binary + `ara` and `eng` traineddata. Generative writing needs an optional local Ollama server and an installed licensed model.
 
-Install:
+Quick Docker startup (from `rewrite/backend`):
+```bash
+export AIDICT_ACCESS_TOKEN='replace-with-a-long-random-secret'
+docker compose up --build -d
+```
+The service binds to **127.0.0.1:8765 only**, not a public interface. Configure a trusted HTTPS reverse proxy and an authenticated endpoint before connecting Android. The container includes the Tesseract Arabic/English traineddata and ffmpeg and downloads the selected Whisper model on first use. For writing tools, install Ollama separately, pull a suitable licensed multilingual model, set `AIDICT_OLLAMA_MODEL`, and ensure the container can reach Ollama; `host.docker.internal` may require additional host configuration. Docker startup has not yet been verified against a real server.
+
+Manual installation without Docker:
 ```bash
 sudo apt-get install tesseract-ocr tesseract-ocr-ara tesseract-ocr-eng
 python -m venv .venv && . .venv/bin/activate
