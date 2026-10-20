@@ -112,12 +112,13 @@ class _LearningScreenState extends State<LearningScreen> {
   List<String> get choices {
     if(index>=entries.length)return [];
     final correct=entries[index].value;
-    final others=entries.where((e)=>e.value!=correct)
-      .skip((index*7)% (entries.length-3)).take(3).map((e)=>e.value).toList();
-    final list=[correct,...others];
-    // Rotate the correct answer's position, avoiding a predictable first choice.
-    final offset=index%list.length;
-    return [...list.skip(offset),...list.take(offset)];
+    final alternatives=entries.where((e)=>e.value!=correct).map((e)=>e.value).toList();
+    final options=<String>[correct];
+    for(var offset=0;offset<3&&offset<alternatives.length;offset++){
+      options.add(alternatives[(index*7+offset*11)%alternatives.length]);
+    }
+    final shift=(index*3+1)%options.length;
+    return [...options.skip(shift),...options.take(shift)];
   }
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('اختبار المفردات')),
