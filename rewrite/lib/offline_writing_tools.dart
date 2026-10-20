@@ -3,7 +3,7 @@
 class OfflineWritingTools {
   static String proofreadFormatting(String text) {
     return text.replaceAll('\r\n','\n').replaceAll('\r','\n')
-      .replaceAll(RegExp(r'[ \\t]+'),' ')
+      .replaceAll(RegExp(r'[ \t]+'),' ')
       .replaceAll(RegExp(r' *\n *'),'\n')
       .replaceAll(RegExp(r'\n{3,}'),'\n\n').trim();
   }
@@ -12,11 +12,11 @@ class OfflineWritingTools {
     if(maxSentences<1)throw const FormatException('Invalid sentence limit');
     final cleaned=proofreadFormatting(text);
     if(cleaned.isEmpty)return '';
-    final sentences=cleaned.split(RegExp(r'(?<=[.!؟?])\\s+|\\n+'))
+    final sentences=cleaned.split(RegExp(r'(?<=[.!؟?])\s+|\n+'))
       .map((s)=>s.trim()).where((s)=>s.isNotEmpty).toList();
     if(sentences.length<=maxSentences)return sentences.join(' ');
     final frequency=<String,int>{};
-    final words=RegExp(r'[\\p{L}]{3,}',unicode:true);
+    final words=RegExp(r'[\p{L}]{3,}',unicode:true);
     for(final sentence in sentences){
       for(final match in words.allMatches(sentence.toLowerCase())){
         final word=match.group(0)!;
