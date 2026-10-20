@@ -42,7 +42,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
         onResult: (event) {
           if (mounted) setState(() => recognized = event.recognizedWords);
         },
-        options: stt.SpeechListenOptions(
+        listenOptions: stt.SpeechListenOptions(
           localeId: language == 'ar' ? 'ar' : 'en_US',
           listenFor: const Duration(seconds: 45),
           pauseFor: const Duration(seconds: 4),
