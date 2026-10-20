@@ -26,3 +26,14 @@ Endpoints match the mobile `AiBackend` contract: POST /v1/aidict multipart `task
 **Privacy and production limits**: uploaded audio/images/text can be personal information. The server must impose upload size limits at its reverse proxy, rate limiting, authentication, consent, retention controls and TLS. This reference implementation includes only baseline content-size checks and an optional bearer-token check, so it is **not production-ready**. Audio transcription needs CPU/GPU and Whisper model download; Tesseract Arabic OCR accuracy varies. Ollama requires a running model. Models have their own licenses.
 
 For Android integration, the app's optional endpoint can be `https://your-domain.example/v1/aidict`. Note that text-format summarization already has a separate no-server offline extraction option in Flutter.
+
+## Local API regression tests
+
+After installing `requirements.txt`, run from `rewrite/backend`:
+
+```bash
+pip install pytest
+python -m pytest -q test_app.py
+```
+
+Tests use FastAPI TestClient and mock the Tesseract OCR invocation, so a green result validates request handling only, **not** real Arabic OCR quality, Whisper model downloads, Ollama availability or Android device behavior.
