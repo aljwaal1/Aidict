@@ -13,6 +13,7 @@ class AiToolsPage extends StatefulWidget {
 class _AiToolsPageState extends State<AiToolsPage> {
   static const endpointKey='aidict.backend.endpoint';
   final endpoint=TextEditingController();
+  final accessToken=TextEditingController();
   final text=TextEditingController();
   bool busy=false;
   String result='', error='';
@@ -54,7 +55,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
     setState((){busy=true;error='';result='';});
     try {
       await _saveEndpoint();
-      final extracted=await AiBackend.recognizeImage(endpoint:endpoint.text,camera:camera);
+      final extracted=await AiBackend.recognizeImage(endpoint:endpoint.text,camera:camera,accessToken:accessToken.text);
       if(mounted)setState(()=>result=extracted??'لم تُختر صورة');
     } catch(e) {
       if(mounted)setState(()=>error='$e');
@@ -66,26 +67,31 @@ class _AiToolsPageState extends State<AiToolsPage> {
     try {
       await _saveEndpoint();
       final response=task=='transcribe'
-        ? await AiBackend.transcribeAudio(endpoint:endpoint.text)
-        : await AiBackend.process(endpoint:endpoint.text,task:task,text:text.text);
+        ? await AiBackend.transcribeAudio(endpoint:endpoint.text,accessToken:accessToken.text)
+        : await AiBackend.process(endpoint:endpoint.text,task:task,text:text.text,accessToken:accessToken.text);
       if(mounted)setState(()=>result=response??'لم يُختر تسجيل');
     } catch(e) {
       if(mounted)setState(()=>error='$e');
     } finally {if(mounted)setState(()=>busy=false);}
   }
-  @override void dispose(){endpoint.dispose();text.dispose();super.dispose();}
+  @override void dispose(){endpoint.dispose();accessToken.dispose();text.dispose();super.dispose();}
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('المستندات والصوت والذكاء الاصطناعي')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
       const Text('الميزات المتقدمة تحتاج خادم معالجة HTTPS تملكه أو تثق به. '
         'لن تُرسل أي بيانات حتى تضغط زر المعالجة. لا تدخل مفتاح API هنا؛ '
-        'المفاتيح تُحفظ في الخادم فقط.'),
+        'رمز الوصول اختيارى ولا يُحفظ على الهاتف.'),
       const SizedBox(height:12),
       TextField(controller:endpoint,keyboardType:TextInputType.url,
         onChanged:(_)=>_endpointEdited=true,
         decoration:const InputDecoration(
           labelText:'رابط خدمة المعالجة HTTPS',
           hintText:'https://example.com/v1/aidict',
+          border:OutlineInputBorder())),
+      const SizedBox(height:12),
+      TextField(controller:accessToken,obscureText:true,enableSuggestions:false,
+        autocorrect:false,decoration:const InputDecoration(
+          labelText:'رمز الوصول للخادم (اختياري، لا يُحفظ)',
           border:OutlineInputBorder())),
       const SizedBox(height:12),
       TextField(controller:text,maxLines:6,minLines:3,
