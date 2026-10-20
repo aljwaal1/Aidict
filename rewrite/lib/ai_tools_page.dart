@@ -1,44 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'ai_backend.dart';
 import 'offline_writing_tools.dart';
 
-/// User-owned HTTPS processing endpoint; no provider tokens are bundled.
+/// All actions on this page work on-device and never contact a server.
 class AiToolsPage extends StatefulWidget {
   final String initialText;
   final ValueChanged<String> onResult;
   const AiToolsPage({super.key,required this.initialText,required this.onResult});
   @override State<AiToolsPage> createState()=>_AiToolsPageState();
 }
+
 class _AiToolsPageState extends State<AiToolsPage> {
-  static const endpointKey='aidict.backend.endpoint';
-  final endpoint=TextEditingController();
-  final accessToken=TextEditingController();
   final text=TextEditingController();
-  bool busy=false;
-  String result='', error='';
-  bool _endpointLoaded=false;
-  bool _endpointEdited=false;
+  String result='',error='';
   @override void initState(){
     super.initState();
     text.text=widget.initialText;
-    _loadEndpoint();
-  }
-  Future<void> _loadEndpoint() async {
-    final prefs=await SharedPreferences.getInstance();
-    if(mounted){
-      if(!_endpointEdited)endpoint.text=prefs.getString(endpointKey)??'';
-      setState(()=>_endpointLoaded=true);
-    }
-  }
-  Future<void> _saveEndpoint() async {
-    final uri=AiBackend.validate(endpoint.text);
-    final prefs=await SharedPreferences.getInstance();
-    await prefs.setString(endpointKey,uri.toString());
   }
   void runOffline(bool summarize) {
     final source=text.text.trim();
-    if(source.isEmpty) {
+    if(source.isEmpty){
       setState(()=>error='أدخل النص أولًا');
       return;
     }
@@ -49,86 +29,33 @@ class _AiToolsPageState extends State<AiToolsPage> {
         : OfflineWritingTools.proofreadFormatting(source);
     });
   }
-  Future<void> runOcr(bool camera) async {
-    if(busy)return;
-    if(!_endpointLoaded){setState(()=>error='انتظر تحميل إعدادات الخدمة');return;}
-    setState((){busy=true;error='';result='';});
-    try {
-      await _saveEndpoint();
-      final extracted=await AiBackend.recognizeImage(endpoint:endpoint.text,camera:camera,accessToken:accessToken.text);
-      if(mounted)setState(()=>result=extracted??'لم تُختر صورة');
-    } catch(e) {
-      if(mounted)setState(()=>error='$e');
-    } finally {if(mounted)setState(()=>busy=false);}
-  }
-  Future<void> run(String task) async {
-    if(busy)return;
-    setState((){busy=true;error='';result='';});
-    try {
-      await _saveEndpoint();
-      final response=task=='transcribe'
-        ? await AiBackend.transcribeAudio(endpoint:endpoint.text,accessToken:accessToken.text)
-        : await AiBackend.process(endpoint:endpoint.text,task:task,text:text.text,accessToken:accessToken.text);
-      if(mounted)setState(()=>result=response??'لم يُختر تسجيل');
-    } catch(e) {
-      if(mounted)setState(()=>error='$e');
-    } finally {if(mounted)setState(()=>busy=false);}
-  }
-  @override void dispose(){endpoint.dispose();accessToken.dispose();text.dispose();super.dispose();}
+  @override void dispose(){text.dispose();super.dispose();}
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('المستندات والصوت والذكاء الاصطناعي')),
+    appBar:AppBar(title:const Text('أدوات النص المحلية')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      const Text('الميزات المتقدمة تحتاج خادم معالجة HTTPS تملكه أو تثق به. '
-        'لن تُرسل أي بيانات حتى تضغط زر المعالجة. لا تدخل مفتاح API هنا؛ '
-        'رمز الوصول اختيارى ولا يُحفظ على الهاتف.'),
-      const SizedBox(height:12),
-      TextField(controller:endpoint,keyboardType:TextInputType.url,
-        onChanged:(_)=>_endpointEdited=true,
-        decoration:const InputDecoration(
-          labelText:'رابط خدمة المعالجة HTTPS',
-          hintText:'https://example.com/v1/aidict',
+      const Text('كل الأدوات في هذه الصفحة تعمل على الهاتف دون خادم أو API. '
+        'التلخيص استخراجي؛ والتنسيق ليس تدقيقًا لغويًا بنموذج ذكاء اصطناعي.'),
+      const SizedBox(height:16),
+      TextField(controller:text,maxLines:8,minLines:4,
+        decoration:const InputDecoration(labelText:'النص',
           border:OutlineInputBorder())),
       const SizedBox(height:12),
-      TextField(controller:accessToken,obscureText:true,enableSuggestions:false,
-        autocorrect:false,decoration:const InputDecoration(
-          labelText:'رمز الوصول للخادم (اختياري، لا يُحفظ)',
-          border:OutlineInputBorder())),
-      const SizedBox(height:12),
-      TextField(controller:text,maxLines:6,minLines:3,
-        decoration:const InputDecoration(labelText:'النص',border:OutlineInputBorder())),
-      const SizedBox(height:12),
-      Text('أدوات مجانية دون إنترنت',style:Theme.of(context).textTheme.titleMedium),
       Wrap(spacing:8,runSpacing:8,children:[
-        FilledButton.icon(onPressed:busy?null:()=>runOffline(true),
-          icon:const Icon(Icons.short_text),label:const Text('تلخيص استخراجي محلي')),
-        OutlinedButton.icon(onPressed:busy?null:()=>runOffline(false),
-          icon:const Icon(Icons.format_align_left),label:const Text('تنسيق النص محليًا')),
-      ]),
-      const Text('التلخيص المحلي يختار جملًا من النص الأصلي، وليس إعادة صياغة بالذكاء الاصطناعي.'),
-      const Divider(height:30),
-      Text('ميزات متقدمة عبر خادم اختياري',style:Theme.of(context).textTheme.titleMedium),
-      Wrap(spacing:8,runSpacing:8,children:[
-        FilledButton.icon(onPressed:busy?null:()=>run('rewrite'),
-          icon:const Icon(Icons.edit_note),label:const Text('إعادة صياغة')),
-        FilledButton.icon(onPressed:busy?null:()=>run('proofread'),
-          icon:const Icon(Icons.spellcheck),label:const Text('تدقيق')),
-        FilledButton.icon(onPressed:busy?null:()=>run('summarize'),
-          icon:const Icon(Icons.summarize),label:const Text('تلخيص')),
-        OutlinedButton.icon(onPressed:busy?null:()=>runOcr(false),
-          icon:const Icon(Icons.image_search),label:const Text('OCR عربي من صورة')),
-        OutlinedButton.icon(onPressed:busy?null:()=>runOcr(true),
-          icon:const Icon(Icons.camera_alt),label:const Text('OCR عربي بالكاميرا')),
-        OutlinedButton.icon(onPressed:busy?null:()=>run('transcribe'),
-          icon:const Icon(Icons.audio_file),label:const Text('تفريغ ملف صوتي')),
+        FilledButton.icon(onPressed:()=>runOffline(true),
+          icon:const Icon(Icons.short_text),label:const Text('تلخيص محلي')),
+        OutlinedButton.icon(onPressed:()=>runOffline(false),
+          icon:const Icon(Icons.format_align_left),label:const Text('تنسيق النص')),
       ]),
       const SizedBox(height:12),
-      const Text('عقد الخدمة: POST JSON للكتابة أو multipart/form-data '
-        'بحقل audio للتفريغ أو image للتعرف على النص العربي؛ النتيجة JSON باسم result.'),
-      if(busy)const LinearProgressIndicator(),
-      if(error.isNotEmpty)Text(error,style:TextStyle(color:Theme.of(context).colorScheme.error)),
+      const Text('استخراج النص العربي من الصور، وتفريغ التسجيلات، '
+        'وإعادة الصياغة بنموذج محلي تحتاج محركات تعمل على Android '
+        'وستُتاح بعد دمجها والتحقق منها. لا توجد خدمة سحابية مخفية.'),
+      if(error.isNotEmpty)Text(error,
+        style:TextStyle(color:Theme.of(context).colorScheme.error)),
       if(result.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),
         child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
           SelectableText(result),
+          const SizedBox(height:8),
           FilledButton(onPressed:(){
             widget.onResult(result);
             Navigator.pop(context);
