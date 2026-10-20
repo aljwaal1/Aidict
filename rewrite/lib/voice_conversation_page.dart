@@ -4,8 +4,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter/services.dart';
 import 'extra_features.dart';
 
-/// Voice capture follows device speech service availability; offline recognition
-/// is not guaranteed, and no recording is stored by this screen.
+/// Requests recognition on-device only. Availability depends on installed
+/// offline speech packs. No remote speech fallback is permitted.
 class VoiceConversationPage extends StatefulWidget {
   final Future<String> Function(String text, String source, String target) translate;
   const VoiceConversationPage({super.key, required this.translate});
@@ -35,7 +35,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
       final ready = await speech.initialize(onError: (error) {
         if (mounted) setState(() { message = error.errorMsg; listening = false; });
       });
-      if (!ready) throw StateError('خدمة التعرف على الصوت غير متاحة على الجهاز');
+      if (!ready) throw StateError('التعرف الصوتي المحلي غير متاح؛ ثبّت حزمة التعرف دون إنترنت من إعدادات الجهاز');
       if (!mounted) return;
       setState(() => listening = true);
       await speech.listen(
@@ -44,6 +44,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
         },
         listenOptions: stt.SpeechListenOptions(
           localeId: language == 'ar' ? 'ar' : 'en_US',
+          onDevice: true,
           listenFor: const Duration(seconds: 45),
           pauseFor: const Duration(seconds: 4),
         ),
@@ -78,7 +79,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('محادثة صوتية بين شخصين')),
     body: Directionality(textDirection:TextDirection.rtl,child:ListView(padding: const EdgeInsets.all(16), children: [
-      const Text('التعرف على الصوت قد يحتاج الإنترنت بحسب خدمات الجهاز. اضغط على المتحدث ثم ترجمة ونطق.'),
+      const Text('التعرف على الصوت محلي فقط. قد تحتاج تثبيت حزم التعرف الصوتي العربية والإنجليزية على جهازك أولًا. لن نستخدم التعرف السحابي كبديل.'),
       const SizedBox(height: 20),
       Row(children: [
         Expanded(child: FilledButton.icon(
