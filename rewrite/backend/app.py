@@ -74,14 +74,14 @@ async def aidict(
     authorization: str | None = Header(default=None),
 ):
     check_token(authorization)
-    media_type = request.headers.get("content-type", "")
-    if "application/json" in media_type:
+    media_type = request.headers.get("content-type", "").lower()
+    if media_type.startswith("application/json"):
         try:
             payload = TextTask.model_validate(await request.json())
         except Exception as exc:
             raise HTTPException(status_code=422, detail="Invalid text payload") from exc
         return await process_text(payload)
-    if "multipart/form-data" not in media_type:
+    if not media_type.startswith("multipart/form-data"):
         raise HTTPException(status_code=415, detail="Expected JSON or multipart")
     form = await request.form()
     task = str(form.get("task", ""))
@@ -97,7 +97,7 @@ async def aidict(
             if image.width * image.height > 30_000_000:
                 raise HTTPException(status_code=413, detail="Image too large")
             text = pytesseract.image_to_string(image.convert("RGB"), lang="ara+eng")
-        except (UnidentifiedImageError, OSError, ValueError) as exc:
+        except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError) as exc:
             raise HTTPException(status_code=400, detail="Invalid image") from exc
     elif task == "transcribe":
         uploaded = form.get("audio")
