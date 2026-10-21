@@ -4,7 +4,7 @@ on:
     branches: [rewrite/from-scratch]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   issues: write
 jobs:
   apk:
@@ -116,3 +116,17 @@ jobs:
           name: Aidict-From-Scratch-Debug-APK
           path: rewrite/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+
+      - name: Publish direct APK download
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="aidict-debug-${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" \
+            build/app/outputs/flutter-apk/app-debug.apk#Aidict-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Aidict Debug Build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automatic Android debug APK from the rewrite/from-scratch branch. Not signed for Google Play distribution." \
+            --prerelease
