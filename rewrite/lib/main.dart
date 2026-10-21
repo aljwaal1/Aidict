@@ -136,18 +136,21 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   void clearText() => setState(() {input.clear();output='';message='';});
   void reverseLanguages() => setState(() {
     final previous=source;source=target;target=previous;
+    message='';
     if(output.isNotEmpty){final old=input.text;input.text=output;output=old;_translatedInput=input.text;}
   });
   Future<void> translate() async {
     if(busy||input.text.trim().isEmpty)return;
     if(source==target){setState(()=>message='اختر لغتين مختلفتين للترجمة');return;}
-    setState((){busy=true;message='';});
+    final requestedText=input.text.trim();
+    final requestedSource=source;
+    final requestedTarget=target;
+    setState((){busy=true;message='';output='';});
     try {
-      final text=input.text.trim();
-      final result=await local(text);
-      if(mounted){
-        setState((){_translatedInput=text;output=result;});
-        await SavedTranslations.add('$source → $target | $text | $result');
+      final result=await local(requestedText,sourceCode:requestedSource,targetCode:requestedTarget);
+      if(mounted && input.text.trim()==requestedText && source==requestedSource && target==requestedTarget){
+        setState((){_translatedInput=input.text;output=result;});
+        await SavedTranslations.add('$requestedSource → $requestedTarget | $requestedText | $result');
       }
     } catch(e) {
       if(mounted)setState(()=>message='$e');
@@ -253,7 +256,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           OutlinedButton.icon(onPressed:busy?null:importDocument,
             icon:const Icon(Icons.description_outlined),label:const Text('PDF / Word / TXT')),
         ]),
-        const Padding(padding:EdgeInsets.only(top:8),child:Text('تعرف الصور يدعم النصوص اللاتينية فقط حاليًا؛ ملفات PDF المصورة والعربية في الصور تحتاج خدمة OCR أخرى.')),
+        const Padding(padding:EdgeInsets.only(top:8),child:Text('التعرف على النص العربي والإنجليزي من الصور وملفات PDF المصورة يعمل محليًا على الهاتف.')),
         const SizedBox(height:12),
         FilledButton(onPressed:busy?null:translate,child:const Text('ترجمة')),
         if(busy)const LinearProgressIndicator(),
