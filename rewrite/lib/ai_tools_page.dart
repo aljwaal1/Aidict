@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,14 @@ class _AiToolsPageState extends State<AiToolsPage> {
     try {
       final size=await File(picked.path).length();
       if(size<1000000)throw const FormatException('ملف النموذج صغير أو غير صالح');
-      await llama.loadModel(modelPath:picked.path,threads:4,contextSize:2048);
+      final support=await getApplicationSupportDirectory();
+      final modelDirectory=Directory('${support.path}/local_llm');
+      await modelDirectory.create(recursive:true);
+      final persistent=File('${modelDirectory.path}/active.gguf');
+      if(picked.path!=persistent.path){
+        await File(picked.path).copy(persistent.path);
+      }
+      await llama.loadModel(modelPath:persistent.path,threads:4,contextSize:2048);
       if(mounted)setState((){modelName=picked.name;modelReady=true;});
     }catch(e){if(mounted)setState(()=>error='تعذر تحميل نموذج GGUF المحلي: $e');}
     finally{if(mounted)setState(()=>generating=false);}
