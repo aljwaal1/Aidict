@@ -18,6 +18,13 @@ class TextPreparation {
   static String preview(String value,{int maxLength=400}) {
     final text=normalize(value);
     if(text.length<=maxLength)return text;
-    return '${text.substring(0,maxLength)}…';
+    if(maxLength<1)return '…';
+    var cut=maxLength;
+    if(cut<text.length && cut>0){
+      final current=text.codeUnitAt(cut);
+      final previous=text.codeUnitAt(cut-1);
+      if(current>=0xDC00 && current<=0xDFFF && previous>=0xD800 && previous<=0xDBFF)cut--;
+    }
+    return '${text.substring(0,cut)}…';
   }
 }
