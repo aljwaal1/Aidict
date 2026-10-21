@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:file_selector/file_selector.dart';
+import 'package:llama_flutter_android/llama_flutter_android.dart';
 import 'package:flutter/material.dart';
 import 'offline_writing_tools.dart';
 
@@ -12,6 +16,39 @@ class AiToolsPage extends StatefulWidget {
 class _AiToolsPageState extends State<AiToolsPage> {
   final text=TextEditingController();
   String result='',error='';
+  final LlamaController llama=LlamaController();
+  bool modelReady=false,generating=false;
+  String modelName='لم يتم اختيار نموذج GGUF';
+  StreamSubscription<String>? generation;
+
+  Future<void> chooseModel() async {
+    final picked=await openFile(acceptedTypeGroups:[const XTypeGroup(label:'GGUF',extensions:['gguf'])]);
+    if(picked==null)return;
+    setState((){generating=true;error='';modelReady=false;});
+    try {
+      final size=await File(picked.path).length();
+      if(size<1000000)throw const FormatException('ملف النموذج صغير أو غير صالح');
+      await llama.loadModel(modelPath:picked.path,threads:4,contextSize:2048);
+      if(mounted)setState((){modelName=picked.name;modelReady=true;});
+    }catch(e){if(mounted)setState(()=>error='تعذر تحميل نموذج GGUF المحلي: $e');}
+    finally{if(mounted)setState(()=>generating=false);}
+  }
+
+  Future<void> rewriteLocally() async {
+    final source=text.text.trim();
+    if(source.isEmpty||!modelReady||generating)return;
+    setState((){result='';error='';generating=true;});
+    try {
+      generation=llama.generateChat(messages:[
+        ChatMessage(role:'system',content:'أعد صياغة النص مع حفظ المعنى واللغة دون إضافة معلومات جديدة. أجب بالنص المعاد صياغته فقط.'),
+        ChatMessage(role:'user',content:source),
+      ],maxTokens:512,temperature:0.3).listen((chunk){
+        if(mounted)setState(()=>result+=chunk);
+      },onError:(Object e){if(mounted)setState((){error='تعذر تشغيل النموذج محليًا: $e';generating=false;});},
+      onDone:(){if(mounted)setState(()=>generating=false);});
+    }catch(e){if(mounted)setState((){error='$e';generating=false;});}
+  }
+
   @override void initState(){
     super.initState();
     text.text=widget.initialText;
@@ -29,7 +66,12 @@ class _AiToolsPageState extends State<AiToolsPage> {
         : OfflineWritingTools.proofreadFormatting(source);
     });
   }
-  @override void dispose(){text.dispose();super.dispose();}
+  @override void dispose(){
+    generation?.cancel();
+    llama.stop();
+    llama.dispose();
+    text.dispose();super.dispose();
+  }
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('أدوات النص المحلية')),
     body:ListView(padding:const EdgeInsets.all(16),children:[
@@ -47,9 +89,14 @@ class _AiToolsPageState extends State<AiToolsPage> {
           icon:const Icon(Icons.format_align_left),label:const Text('تنسيق النص')),
       ]),
       const SizedBox(height:12),
-      const Text('استخراج النص العربي من الصور، وتفريغ التسجيلات، '
-        'وإعادة الصياغة بنموذج محلي تحتاج محركات تعمل على Android '
-        'وستُتاح بعد دمجها والتحقق منها. لا توجد خدمة سحابية مخفية.'),
+      const SizedBox(height:12),
+      const Text('إعادة صياغة بالذكاء الاصطناعي على الجهاز: اختر نموذج GGUF متوافقًا محفوظًا على هاتفك. لا ترفع النصوص إلى أي خادم.'),
+      OutlinedButton.icon(onPressed:generating?null:chooseModel,
+        icon:const Icon(Icons.folder_open),label:Text('اختيار نموذج GGUF: $modelName')),
+      FilledButton.icon(onPressed:generating||!modelReady?null:rewriteLocally,
+        icon:const Icon(Icons.auto_fix_high),label:const Text('إعادة الصياغة محليًا بالنموذج')),
+      if(generating)const LinearProgressIndicator(),
+      const Text('تفريغ الملفات الصوتية المسجلة يحتاج نموذج تعرّف صوتي محلي منفصل. الميكروفون المباشر يعمل حسب حزم Android المتاحة.'),
       if(error.isNotEmpty)Text(error,
         style:TextStyle(color:Theme.of(context).colorScheme.error)),
       if(result.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),
