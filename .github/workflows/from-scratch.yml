@@ -31,9 +31,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path('android/app/build.gradle.kts')
-          c = p.read_text().replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36').replace('minSdk = flutter.minSdkVersion', 'minSdk = 23')
+          c = p.read_text().replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36').replace('minSdk = flutter.minSdkVersion', 'minSdk = 26')
           p.write_text(c)
-          assert 'compileSdk = 36' in c and 'minSdk = 23' in c
+          assert 'compileSdk = 36' in c and 'minSdk = 26' in c
           manifest = Path('android/app/src/main/AndroidManifest.xml')
           xml = manifest.read_text()
           permission = '<uses-permission android:name="android.permission.INTERNET" />'
