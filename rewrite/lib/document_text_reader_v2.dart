@@ -52,7 +52,7 @@ class DocumentTextReaderV2 {
         }finally{await page.close();}
       }
     }finally{await pdf.close();}
-    return parts.join('\\n\\n');
+    return parts.join('\n\n');
   }
 
 
