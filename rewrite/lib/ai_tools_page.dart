@@ -28,14 +28,21 @@ class _AiToolsPageState extends State<AiToolsPage> {
     if(picked==null)return;
     setState((){generating=true;error='';modelReady=false;});
     try {
-      final size=await File(picked.path).length();
+      final size=await picked.length();
       if(size<1000000)throw const FormatException('ملف النموذج صغير أو غير صالح');
+      if(size>3*1024*1024*1024)throw const FormatException('النموذج أكبر من 3 GB؛ اختر نموذجًا أصغر مناسبًا لذاكرة الهاتف');
       final support=await getApplicationSupportDirectory();
       final modelDirectory=Directory('${support.path}/local_llm');
       await modelDirectory.create(recursive:true);
       final persistent=File('${modelDirectory.path}/active.gguf');
       if(picked.path!=persistent.path){
-        await File(picked.path).copy(persistent.path);
+        final staging=File('${modelDirectory.path}/importing.gguf');
+        try {
+          await picked.saveTo(staging.path);
+          if(await staging.length()!=size)throw const FormatException('نسخ النموذج غير مكتمل');
+          if(await persistent.exists())await persistent.delete();
+          await staging.rename(persistent.path);
+        } finally {if(await staging.exists())await staging.delete();}
       }
       await llama.loadModel(modelPath:persistent.path,threads:4,contextSize:2048);
       if(mounted)setState((){modelName=picked.name;modelReady=true;});
