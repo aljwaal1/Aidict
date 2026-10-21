@@ -21,13 +21,25 @@ class _OfflineAudioPageState extends State<OfflineAudioPage> {
       XTypeGroup(label:name,extensions:extensions),
     ]);
     if(picked==null)return null;
-    if(name=='WAV')return picked.path;
+    final length=await picked.length();
+    final limit=name=='WAV' ? 100*1024*1024 : 3*1024*1024*1024;
+    if(length==0 || length>limit) {
+      throw FormatException('حجم الملف غير مدعوم: الحد المسموح ${name=='WAV'?'100 MB':'3 GB'}');
+    }
     final dir=await getApplicationSupportDirectory();
     final folder=Directory('${dir.path}/whisper_models');
     await folder.create(recursive:true);
-    final dest=File('${folder.path}/$name');
-    await picked.saveTo(dest.path);
-    return dest.path;
+    final dest=File('${folder.path}/${name=='WAV'?'input.wav':name}');
+    final stage=File('${dest.path}.part');
+    try {
+      await picked.saveTo(stage.path);
+      if(await stage.length()!=length)throw const FormatException('نسخ الملف غير مكتمل');
+      if(await dest.exists())await dest.delete();
+      await stage.rename(dest.path);
+      return dest.path;
+    } finally {
+      if(await stage.exists())await stage.delete();
+    }
   }
 
   Future<void> transcribe() async {
