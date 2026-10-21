@@ -80,20 +80,28 @@ class _OfflineAudioPageState extends State<OfflineAudioPage> {
       const Text('اختر ملفات نموذج Whisper ONNX المتوافقة: encoder وdecoder وtokens.txt، ثم ملف WAV أحادي القناة 16 kHz. المعالجة بالكامل على الهاتف، ولا يتم رفع الصوت أو النص لأي خادم.'),
       const SizedBox(height:12),
       OutlinedButton(onPressed:busy?null:() async {
-        final path=await choose('encoder.onnx',['onnx']);
-        if(path!=null)setState(()=>encoder=path);
+        try {
+          final path=await choose('encoder.onnx',['onnx']);
+          if(path!=null && mounted)setState(()=>encoder=path);
+        }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
       },child:Text(encoder==null?'اختيار encoder.onnx':'تم اختيار Encoder')),
       OutlinedButton(onPressed:busy?null:() async {
-        final path=await choose('decoder.onnx',['onnx']);
-        if(path!=null)setState(()=>decoder=path);
+        try {
+          final path=await choose('decoder.onnx',['onnx']);
+          if(path!=null && mounted)setState(()=>decoder=path);
+        }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
       },child:Text(decoder==null?'اختيار decoder.onnx':'تم اختيار Decoder')),
       OutlinedButton(onPressed:busy?null:() async {
-        final path=await choose('tokens.txt',['txt']);
-        if(path!=null)setState(()=>tokens=path);
+        try {
+          final path=await choose('tokens.txt',['txt']);
+          if(path!=null && mounted)setState(()=>tokens=path);
+        }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
       },child:Text(tokens==null?'اختيار tokens.txt':'تم اختيار Tokens')),
       OutlinedButton(onPressed:busy?null:() async {
-        final path=await choose('WAV',['wav']);
-        if(path!=null)setState(()=>wav=path);
+        try {
+          final path=await choose('WAV',['wav']);
+          if(path!=null && mounted)setState(()=>wav=path);
+        }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
       },child:Text(wav==null?'اختيار WAV للتفريغ':'تم اختيار WAV')),
       FilledButton.icon(
         onPressed:busy||encoder==null||decoder==null||tokens==null||wav==null?null:transcribe,
