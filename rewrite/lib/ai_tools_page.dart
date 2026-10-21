@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 import 'package:flutter/material.dart';
 import 'offline_writing_tools.dart';
+import 'offline_audio_page.dart';
 
 /// All actions on this page work on-device and never contact a server.
 class AiToolsPage extends StatefulWidget {
@@ -96,7 +97,10 @@ class _AiToolsPageState extends State<AiToolsPage> {
       FilledButton.icon(onPressed:generating||!modelReady?null:rewriteLocally,
         icon:const Icon(Icons.auto_fix_high),label:const Text('إعادة الصياغة محليًا بالنموذج')),
       if(generating)const LinearProgressIndicator(),
-      const Text('تفريغ الملفات الصوتية المسجلة يحتاج نموذج تعرّف صوتي محلي منفصل. الميكروفون المباشر يعمل حسب حزم Android المتاحة.'),
+      OutlinedButton.icon(onPressed:generating?null:()=>Navigator.push(context,
+        MaterialPageRoute<void>(builder:(_)=>const OfflineAudioPage())),
+        icon:const Icon(Icons.audio_file),label:const Text('تفريغ ملف WAV باستخدام Whisper محليًا')),
+      const Text('يتطلب التفريغ توفير نموذج Whisper ONNX وملف WAV بتردد 16 kHz. لا يوجد تحويل تلقائي لـMP3 أو M4A بعد.'),
       if(error.isNotEmpty)Text(error,
         style:TextStyle(color:Theme.of(context).colorScheme.error)),
       if(result.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),
