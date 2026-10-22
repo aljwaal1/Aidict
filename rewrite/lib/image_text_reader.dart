@@ -116,14 +116,14 @@ class _ReviewPhotoPageState extends State<_ReviewPhotoPage> {
           displaySize=Size(width,height);
           return SizedBox(width:width,height:height,child:GestureDetector(
             onPanStart:(d)=>setState((){
-              origin=Offset(d.localPosition.dx.clamp(0,width),
-                d.localPosition.dy.clamp(0,height));
+              origin=Offset(d.localPosition.dx.clamp(0,width).toDouble(),
+                d.localPosition.dy.clamp(0,height).toDouble());
               selection=null;
             }),
             onPanUpdate:(d){
               if(origin==null)return;
-              final end=Offset(d.localPosition.dx.clamp(0,width),
-                d.localPosition.dy.clamp(0,height));
+              final end=Offset(d.localPosition.dx.clamp(0,width).toDouble(),
+                d.localPosition.dy.clamp(0,height).toDouble());
               setState(()=>selection=Rect.fromPoints(origin!,end));
             },
             child:Stack(fit:StackFit.expand,children:[
