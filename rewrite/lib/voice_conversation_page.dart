@@ -21,6 +21,9 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
   String translated = '';
   String message = '';
   String source = 'ar';
+  bool speechReady = false;
+  final TextEditingController manual = TextEditingController();
+  List<stt.LocaleName> installedLocales = [];
   String get target => source == 'ar' ? 'en' : 'ar';
 
   Future<void> capture(String language) async {
@@ -32,25 +35,51 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
     }
     setState(() { source = language; recognized = ''; translated = ''; message = ''; busy = true; });
     try {
-      final ready = await speech.initialize(onError: (error) {
+      final ready = await speech.initialize(onStatus: (status) {
+        if (!mounted) return;
+        if (status == 'done' || status == 'notListening') {
+          setState(() { listening = false;
+            if (recognized.trim().isEmpty && message.isEmpty) {
+              message = 'انتهى الاستماع دون التقاط كلام. تحقق من لغة التعرف الصوتي وحزمته المحلية، أو اكتب النص يدويًا.';
+            }
+          });
+        }
+      }, onError: (error) {
         if (mounted) setState(() { message = error.errorMsg; listening = false; });
       });
       if (!ready) throw StateError('التعرف الصوتي المحلي غير متاح؛ ثبّت حزمة التعرف دون إنترنت من إعدادات الجهاز');
+      installedLocales = await speech.locales();
+      final prefix = language == 'ar' ? 'ar' : 'en';
+      final matches = installedLocales.where((entry) =>
+        entry.localeId.toLowerCase().replaceAll('-', '_').startsWith(prefix)).toList();
+      if (matches.isEmpty) {
+        throw StateError('لغة التعرف الصوتي المطلوبة غير متوفرة على هذا الجهاز: $prefix. يمكنك إدخال النص يدويًا.');
+      }
+      final selected = matches.firstWhere((entry) =>
+        entry.localeId.toLowerCase().replaceAll('-', '_') ==
+          (language == 'ar' ? 'ar_sa' : 'en_us'),
+        orElse: () => matches.first);
       if (!mounted) return;
       setState(() => listening = true);
       await speech.listen(
         onResult: (event) {
-          if (mounted) setState(() => recognized = event.recognizedWords);
+          if (mounted) setState(() { recognized = event.recognizedWords;
+            if (recognized.isNotEmpty) message = ''; });
         },
         listenOptions: stt.SpeechListenOptions(
-          localeId: language == 'ar' ? 'ar' : 'en_US',
+          localeId: selected.localeId,
           onDevice: true,
           listenFor: const Duration(seconds: 45),
           pauseFor: const Duration(seconds: 4),
         ),
       );
+      if (!speech.isListening && mounted) {
+        setState(() { listening = false;
+          if (recognized.isEmpty) message = 'لم يبدأ التعرف الصوتي على هذا الهاتف. راجع إعدادات التعرف دون إنترنت أو أدخل النص يدويًا.';
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() => message = '$e');
+      if (mounted) setState(() { listening = false; message = '$e'; });
     } finally { if (mounted) setState(() => busy = false); }
   }
 
@@ -73,6 +102,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
   @override void dispose() {
     speech.stop();
     tts.stop();
+    manual.dispose();
     super.dispose();
   }
 
@@ -103,6 +133,14 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
       if (recognized.isNotEmpty) TextButton.icon(
         onPressed:()=>Clipboard.setData(ClipboardData(text:recognized)),
         icon:const Icon(Icons.copy),label:const Text('نسخ الكلام')),
+      const SizedBox(height: 12),
+      TextField(controller: manual, maxLines: 2,
+        decoration: InputDecoration(labelText: 'إدخال النص يدويًا عند تعذر التعرف الصوتي',
+          border: const OutlineInputBorder(),
+          suffixIcon: IconButton(tooltip:'استخدام النص المكتوب',
+            onPressed: () => setState(() { recognized = manual.text.trim(); message = ''; }),
+            icon: const Icon(Icons.check_circle_outline))),
+        onSubmitted: (value) => setState(() { recognized=value.trim(); message=''; })),
       const SizedBox(height: 12),
       FilledButton(onPressed: busy || recognized.trim().isEmpty ? null : translateCaptured,
         child: const Text('ترجمة ونطق')),
