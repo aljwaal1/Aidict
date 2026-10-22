@@ -193,7 +193,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     if(busy)return;
     setState((){busy=true;message='';});
     try {
-      final text=await ImageTextReader.selectAndExtract(camera:camera);
+      final text=await ImageTextReader.selectAndExtract(camera:camera,context:context);
       if(text!=null&&mounted) { setState((){
         input.text=text;
         output='';
