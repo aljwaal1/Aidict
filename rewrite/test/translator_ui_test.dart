@@ -13,6 +13,8 @@ void main() {
     expect(find.text('AI photo recognition'), findsOneWidget);
     expect(find.text('AI photo translation'), findsOneWidget);
     expect(find.text('AI simultaneous interpretation'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Offline translation'), 250,
+      scrollable: find.byType(Scrollable).first);
     expect(find.text('Offline translation'), findsOneWidget);
   });
 
