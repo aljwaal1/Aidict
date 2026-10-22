@@ -16,17 +16,17 @@ class DocumentTextReaderV2 {
   static const maxCharacters=40000;
   static const maxScannedPages=20;
 
-  /// Render pages on-device, recognize Arabic and English, and delete temporary images.
-  static Future<String> extractScannedPdf(List<int> bytes) async {
+  /// OCR only the specified pages. Every rendered image is deleted on completion.
+  static Future<Map<int,String>> _ocrPages(List<int> bytes,List<int> indices) async {
+    if(indices.length>maxScannedPages) {
+      throw const FormatException('لا يمكن إجراء OCR لأكثر من 20 صفحة مصورة في ملف واحد');
+    }
     final pdf=await renderer.PdfDocument.openData(Uint8List.fromList(bytes));
-    final parts=<String>[];
+    final recognized=<int,String>{};
     try {
-      if(pdf.pagesCount>maxScannedPages){
-        throw const FormatException('OCR يدعم أول 20 صفحة فقط لكل ملف حفاظًا على الذاكرة');
-      }
       final temp=await getTemporaryDirectory();
-      for(var i=1;i<=pdf.pagesCount;i++) {
-        final page=await pdf.getPage(i);
+      for(final index in indices){
+        final page=await pdf.getPage(index+1);
         try {
           final scale=math.min(2.0,1800/math.max(page.width,page.height));
           final image=await page.render(
@@ -35,35 +35,49 @@ class DocumentTextReaderV2 {
             format:renderer.PdfPageImageFormat.png,
           );
           if(image==null)continue;
-          final file=File('${temp.path}/aidict_ocr_${DateTime.now().microsecondsSinceEpoch}_$i.png');
+          final file=File('${temp.path}/aidict_page_${DateTime.now().microsecondsSinceEpoch}_$index.png');
           try {
             await file.writeAsBytes(image.bytes,flush:true);
-            final recognized=await TesseractOcr.extractText(file.path,
+            final text=await TesseractOcr.extractText(file.path,
               config:const OCRConfig(language:'ara+eng',engine:OCREngine.tesseract));
-            if(recognized.trim().isNotEmpty){
-              parts.add(recognized.trim());
-              if(parts.join('\n').length>maxCharacters){
-                throw const FormatException('نص PDF المستخرج تجاوز 40000 حرف');
-              }
-            }
+            if(text.trim().isNotEmpty)recognized[index]=text.trim();
           }finally{
             if(await file.exists())await file.delete();
           }
         }finally{await page.close();}
       }
     }finally{await pdf.close();}
-    return parts.join('\n\n');
+    return recognized;
   }
 
-
-  /// Extract selectable PDF text first and OCR scanned-only PDFs on-device.
+  /// Combine selectable and scanned pages in their original order, on-device.
   static Future<String> extractPdfText(List<int> bytes) async {
     final pdf=PdfDocument(inputBytes:bytes);
-    String result;
-    try {result=PdfTextExtractor(pdf).extractText();}
-    finally {pdf.dispose();}
-    if(result.trim().isEmpty)result=await extractScannedPdf(bytes);
-    return result.trim();
+    final results=<int,String>{};
+    final missing=<int>[];
+    final count=pdf.pages.count;
+    try {
+      final extractor=PdfTextExtractor(pdf);
+      for(var i=0;i<count;i++){
+        final text=extractor.extractText(startPageIndex:i,endPageIndex:i).trim();
+        if(text.isEmpty){missing.add(i);}
+        else{results[i]=text;}
+      }
+    }finally{pdf.dispose();}
+    if(missing.isNotEmpty){
+      results.addAll(await _ocrPages(bytes,missing));
+    }
+    final buffer=StringBuffer();
+    for(var i=0;i<count;i++){
+      final text=results[i];
+      if(text==null || text.isEmpty)continue;
+      if(buffer.isNotEmpty)buffer.write('\n\n');
+      buffer.write(text);
+      if(buffer.length>maxCharacters){
+        throw const FormatException('النص المستخرج تجاوز 40000 حرف');
+      }
+    }
+    return buffer.toString().trim();
   }
 
   static Future<String?> selectAndExtract() async {
