@@ -10,6 +10,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
 import 'ai_tools_page.dart';
+import 'home_screen.dart';
+import 'offline_audio_page.dart';
 import 'speech_locales.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,13 +37,30 @@ class _AidictAppState extends State<AidictApp> {
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     theme: ThemeData(useMaterial3:true,colorSchemeSeed:const Color(0xFF007F86),scaffoldBackgroundColor:const Color(0xFFF5F9FA),appBarTheme:const AppBarTheme(centerTitle:false),cardTheme:CardThemeData(elevation:0,color:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
     darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorSchemeSeed:const Color(0xFF22BDC2),cardTheme:const CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
-    home: Directionality(textDirection:TextDirection.rtl,
-      child: TranslatorScreen(toggleTheme:_toggleTheme)),
+    home: DashboardShell(toggleTheme:_toggleTheme),
   );
 }
+
+class DashboardShell extends StatelessWidget {
+  const DashboardShell({super.key,required this.toggleTheme});
+  final VoidCallback toggleTheme;
+  @override Widget build(BuildContext context)=>HomeScreen(
+    onSettings:toggleTheme,
+    onHistory:()=>Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>const TranslationLibraryPage(favorites:false))),
+    onFeature:(feature){
+      if(feature=='audio'){
+        Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>const OfflineAudioPage()));
+      }else{
+        Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>TranslatorScreen(toggleTheme:toggleTheme,initialFeature:feature)));
+      }
+    },
+  );
+}
+
 class TranslatorScreen extends StatefulWidget {
   final VoidCallback toggleTheme;
-  const TranslatorScreen({super.key, required this.toggleTheme});
+  final String initialFeature;
+  const TranslatorScreen({super.key, required this.toggleTheme,this.initialFeature='offline'});
   @override State<TranslatorScreen> createState()=>_TranslatorScreenState();
 }
 class _TranslatorScreenState extends State<TranslatorScreen> {
@@ -49,7 +68,21 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   final manager=OnDeviceTranslatorModelManager();
   final FlutterTts tts=FlutterTts();
   bool busy=false;
-  @override void initState(){super.initState();input.addListener(_refreshInputStats);}
+  @override void initState(){
+    super.initState(); input.addListener(_refreshInputStats);
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      if(!mounted)return;
+      switch(widget.initialFeature){
+        case 'photo':
+        case 'photo_translate': importImage(false); break;
+        case 'conversation':
+        case 'live': Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>local(text,sourceCode:s,targetCode:t)))); break;
+        case 'chat': openAiTools(); break;
+        case 'english': Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())); break;
+        default: break;
+      }
+    });
+  }
   void _refreshInputStats(){
     if(!mounted)return;
     // A previously translated result must not be presented as the translation
