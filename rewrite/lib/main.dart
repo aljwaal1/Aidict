@@ -224,11 +224,17 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     await Clipboard.setData(ClipboardData(text:'${input.text}\n\n$output'));
     if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تم نسخ النص والترجمة معًا')));
   }
-  Future<void> speakTranslation() async {
-    if(output.trim().isEmpty)return;
+  Future<void> speakText(String value, String language) async {
+    if(value.trim().isEmpty)return;
     try {
-      await tts.setLanguage(SpeechLocales.forLanguage(target));
-      await tts.speak(output);
+      await tts.stop();
+      final locale=SpeechLocales.forLanguage(language);
+      final available=await tts.isLanguageAvailable(locale);
+      if(available==false || available==0 || available=='0') {
+        throw StateError('صوت $locale غير مثبت على الهاتف؛ ثبّت بيانات النطق من إعدادات تحويل النص إلى كلام');
+      }
+      await tts.setLanguage(locale);
+      await tts.speak(value);
     } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
   }
   @override void dispose(){input.removeListener(_refreshInputStats);input.dispose();tts.stop();super.dispose();}
@@ -296,9 +302,24 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         if(message.isNotEmpty)Text(message),
         if(hasTranslation)Card(child:Padding(padding:const EdgeInsets.all(16),
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+            Row(children:[
+              Expanded(child:Text('النص الأصلي (${source=='ar'?'العربية':'English'})',
+                style:Theme.of(context).textTheme.titleSmall)),
+              IconButton(tooltip:'استمع إلى النص الأصلي',
+                onPressed:()=>speakText(input.text,source),
+                icon:const Icon(Icons.volume_up_outlined)),
+            ]),
+            SelectableText(input.text),
+            const Divider(height:24),
+            Row(children:[
+              Expanded(child:Text('الترجمة (${target=='ar'?'العربية':'English'})',
+                style:Theme.of(context).textTheme.titleSmall)),
+              IconButton(tooltip:'استمع إلى الترجمة',
+                onPressed:()=>speakText(output,target),
+                icon:const Icon(Icons.volume_up_outlined)),
+            ]),
             SelectableText(output),
             Wrap(children:[
-              IconButton(tooltip:'الاستماع للترجمة',onPressed:speakTranslation,icon:const Icon(Icons.volume_up)),
               IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
               IconButton(tooltip:'نسخ النص والترجمة معًا',onPressed:shareTranslation,icon:const Icon(Icons.content_copy)),
               IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
