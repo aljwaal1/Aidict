@@ -22,6 +22,7 @@ class AidictApp extends StatefulWidget {
   @override State<AidictApp> createState() => _AidictAppState();
 }
 class _AidictAppState extends State<AidictApp> {
+  final navigatorKey=GlobalKey<NavigatorState>();
   bool dark = false;
   String? uiLanguage;
   bool loaded = false;
@@ -54,9 +55,10 @@ class _AidictAppState extends State<AidictApp> {
     if(mounted)setState((){uiLanguage=code;UiLanguage.code=code;});
   }
   Future<void> _chooseLanguage({bool firstTime=false}) async {
-    if(!mounted)return;
+    final navContext=navigatorKey.currentContext;
+    if(!mounted||navContext==null)return;
     final picked=await showDialog<String>(
-      context:context,
+      context:navContext,
       barrierDismissible:!firstTime,
       builder:(context)=>PopScope(
         canPop:!firstTime,
@@ -80,16 +82,17 @@ class _AidictAppState extends State<AidictApp> {
     if(picked!=null){
       await _setLanguage(picked);
       if(firstTime && mounted){
-        Navigator.push<void>(context,MaterialPageRoute<void>(
+        Navigator.push<void>(navContext,MaterialPageRoute<void>(
           builder:(_)=>const LanguageModelSettingsPage()));
       }
     }
   }
   Future<void> _openSettings() async {
-    if(!mounted)return;
+    final navContext=navigatorKey.currentContext;
+    if(!mounted||navContext==null)return;
     final ar=uiLanguage!='en';
     await showModalBottomSheet<void>(
-      context:context,
+      context:navContext,
       showDragHandle:true,
       builder:(sheetContext)=>SafeArea(child:Padding(
         padding:const EdgeInsets.all(20),
@@ -109,7 +112,7 @@ class _AidictAppState extends State<AidictApp> {
             subtitle:Text(ar?'تنزيل العربية والإنجليزية وفحص جاهزيتهما':'Download and verify Arabic and English'),
             onTap:(){
               Navigator.pop(sheetContext);
-              Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>const LanguageModelSettingsPage()));
+              Navigator.push<void>(navContext,MaterialPageRoute<void>(builder:(_)=>const LanguageModelSettingsPage()));
             }),
           ListTile(leading:Icon(dark?Icons.light_mode:Icons.dark_mode),
             title:Text(ar?'تغيير المظهر':'Change theme'),
@@ -122,7 +125,7 @@ class _AidictAppState extends State<AidictApp> {
     );
   }
   @override Widget build(BuildContext context) => MaterialApp(
-    title:'Aidict', debugShowCheckedModeBanner:false,
+    title:'Aidict', navigatorKey:navigatorKey, debugShowCheckedModeBanner:false,
     builder:(context,child)=>Directionality(
       textDirection:UiLanguage.arabic?TextDirection.rtl:TextDirection.ltr,
       child:child??const SizedBox.shrink()),
