@@ -344,7 +344,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           Text(UiLanguage.t('اختر اتجاهًا واحدًا؛ تتحدد اللغة الثانية تلقائيًا.','Choose one direction; the other language is set automatically.')),
           const SizedBox(height:10),
           SegmentedButton<String>(
-            segments:const [
+            segments:[
               ButtonSegment(value:'ar',label:Text(UiLanguage.t('عربي ← إنجليزي','Arabic → English'))),
               ButtonSegment(value:'en',label:Text(UiLanguage.t('English → عربي','English → Arabic'))),
             ],
@@ -451,7 +451,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
               }),
             )),
           if(dictionaryQuery.trim().isNotEmpty&&searchWords(dictionaryQuery).isEmpty)
-            const Padding(padding:EdgeInsets.all(12),
+            Padding(padding:const EdgeInsets.all(12),
               child:Text(UiLanguage.t('لا توجد نتائج في القاموس المحلي المصغر.','No matches in the offline dictionary.'))),
         ]),
       ]));
