@@ -1,3 +1,4 @@
+import 'ui_language.dart';
 import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _OfflineAudioPageState extends State<OfflineAudioPage> {
   }
 
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('تفريغ التسجيلات محليًا')),
+    appBar:AppBar(title:Text(UiLanguage.t('تفريغ التسجيلات محليًا','Offline audio transcription'))),
     body:ListView(padding:const EdgeInsets.all(16),children:[
       const Text('اختر ملفات نموذج Whisper ONNX المتوافقة: encoder وdecoder وtokens.txt، ثم ملف WAV أحادي القناة 16 kHz. المعالجة بالكامل على الهاتف، ولا يتم رفع الصوت أو النص لأي خادم.'),
       const SizedBox(height:12),
@@ -106,7 +107,7 @@ class _OfflineAudioPageState extends State<OfflineAudioPage> {
       FilledButton.icon(
         onPressed:busy||encoder==null||decoder==null||tokens==null||wav==null?null:transcribe,
         icon:const Icon(Icons.record_voice_over),
-        label:const Text('تفريغ الصوت على الجهاز')),
+        label:Text(UiLanguage.t('تفريغ الصوت على الجهاز','Transcribe audio on device'))),
       if(busy)const LinearProgressIndicator(),
       if(error.isNotEmpty)Text(error,style:TextStyle(color:Theme.of(context).colorScheme.error)),
       if(output.isNotEmpty)SelectableText(output),
