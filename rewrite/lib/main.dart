@@ -239,7 +239,6 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   }
   @override void dispose(){input.removeListener(_refreshInputStats);input.dispose();tts.stop();super.dispose();}
   @override Widget build(BuildContext context) {
-    const languages=['ar','en'];
     return Scaffold(
       appBar:AppBar(title:const Text('Aidict • المترجم'),
         actions:[IconButton(onPressed:widget.toggleTheme,icon:const Icon(Icons.dark_mode))]),
