@@ -22,30 +22,109 @@ class AidictApp extends StatefulWidget {
 }
 class _AidictAppState extends State<AidictApp> {
   bool dark = false;
+  String? uiLanguage;
+  bool loaded = false;
+
   @override void initState(){super.initState();_restore();}
   Future<void> _restore() async {
     final prefs=await SharedPreferences.getInstance();
-    if(mounted)setState(()=>dark=prefs.getBool('aidict.dark.v1')??false);
+    if(!mounted)return;
+    setState((){
+      dark=prefs.getBool('aidict.dark.v1')??false;
+      final saved=prefs.getString('aidict.ui_language.v1');
+      uiLanguage=saved=='ar'||saved=='en'?saved:null;
+      loaded=true;
+    });
+    if(uiLanguage==null){
+      WidgetsBinding.instance.addPostFrameCallback((_){
+        if(mounted)_chooseLanguage(firstTime:true);
+      });
+    }
   }
   Future<void> _toggleTheme() async {
     setState(()=>dark=!dark);
     final prefs=await SharedPreferences.getInstance();
     await prefs.setBool('aidict.dark.v1',dark);
   }
+  Future<void> _setLanguage(String code) async {
+    final prefs=await SharedPreferences.getInstance();
+    await prefs.setString('aidict.ui_language.v1',code);
+    if(mounted)setState(()=>uiLanguage=code);
+  }
+  Future<void> _chooseLanguage({bool firstTime=false}) async {
+    if(!mounted)return;
+    final picked=await showDialog<String>(
+      context:context,
+      barrierDismissible:!firstTime,
+      builder:(context)=>PopScope(
+        canPop:!firstTime,
+        child:AlertDialog(
+          title:const Text('لغة التطبيق / App language'),
+          content:Column(mainAxisSize:MainAxisSize.min,children:[
+            const Text('اختر لغة القوائم / Choose menu language'),
+            const SizedBox(height:16),
+            ListTile(leading:const Icon(Icons.language),
+              title:const Text('العربية'),
+              trailing:uiLanguage=='ar'?const Icon(Icons.check_circle,color:Colors.teal):null,
+              onTap:()=>Navigator.pop(context,'ar')),
+            ListTile(leading:const Icon(Icons.language),
+              title:const Text('English'),
+              trailing:uiLanguage=='en'?const Icon(Icons.check_circle,color:Colors.teal):null,
+              onTap:()=>Navigator.pop(context,'en')),
+          ]),
+        ),
+      ),
+    );
+    if(picked!=null)await _setLanguage(picked);
+  }
+  Future<void> _openSettings() async {
+    if(!mounted)return;
+    final ar=uiLanguage!='en';
+    await showModalBottomSheet<void>(
+      context:context,
+      showDragHandle:true,
+      builder:(sheetContext)=>SafeArea(child:Padding(
+        padding:const EdgeInsets.all(20),
+        child:Column(mainAxisSize:MainAxisSize.min,children:[
+          Text(ar?'الإعدادات':'Settings',
+            style:Theme.of(sheetContext).textTheme.titleLarge),
+          ListTile(leading:const Icon(Icons.language),
+            title:Text(ar?'لغة التطبيق':'App language'),
+            subtitle:Text(uiLanguage=='en'?'English':'العربية'),
+            trailing:const Icon(Icons.chevron_right),
+            onTap:(){
+              Navigator.pop(sheetContext);
+              _chooseLanguage();
+            }),
+          ListTile(leading:Icon(dark?Icons.light_mode:Icons.dark_mode),
+            title:Text(ar?'تغيير المظهر':'Change theme'),
+            onTap:(){
+              Navigator.pop(sheetContext);
+              _toggleTheme();
+            }),
+        ]),
+      )),
+    );
+  }
   @override Widget build(BuildContext context) => MaterialApp(
     title:'Aidict', debugShowCheckedModeBanner:false,
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     theme: ThemeData(useMaterial3:true,colorSchemeSeed:const Color(0xFF007F86),scaffoldBackgroundColor:const Color(0xFFF5F9FA),appBarTheme:const AppBarTheme(centerTitle:false),cardTheme:CardThemeData(elevation:0,color:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
     darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorSchemeSeed:const Color(0xFF22BDC2),cardTheme:const CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
-    home: DashboardShell(toggleTheme:_toggleTheme),
+    home: loaded
+      ? DashboardShell(toggleTheme:_toggleTheme,onSettings:_openSettings,language:uiLanguage??'ar')
+      : const Scaffold(body:Center(child:CircularProgressIndicator())),
   );
 }
 
 class DashboardShell extends StatelessWidget {
-  const DashboardShell({super.key,required this.toggleTheme});
+  const DashboardShell({super.key,required this.toggleTheme,required this.onSettings,required this.language});
   final VoidCallback toggleTheme;
+  final VoidCallback onSettings;
+  final String language;
   @override Widget build(BuildContext context)=>HomeScreen(
-    onSettings:toggleTheme,
+    onSettings:onSettings,
+    language:language,
     onHistory:()=>Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>const TranslationLibraryPage(favorites:false))),
     onFeature:(feature){
       if(feature=='audio'){
