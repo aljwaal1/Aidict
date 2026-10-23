@@ -1,3 +1,4 @@
+import 'ui_language.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -121,11 +122,11 @@ class _LearningScreenState extends State<LearningScreen> {
     return [...options.skip(shift),...options.take(shift)];
   }
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('اختبار المفردات')),
+    appBar:AppBar(title:Text(UiLanguage.t('اختبار المفردات','Vocabulary quiz'))),
     body:Padding(padding:const EdgeInsets.all(16),child:index>=entries.length
       ? Column(children:[
-        Text('النتيجة: $score / ${entries.length}'),
-        FilledButton(onPressed:()=>setState((){index=0;score=0;answered=false;}),child:const Text('إعادة الاختبار'))
+        Text(UiLanguage.t('النتيجة: $score / ${entries.length}','Score: $score / ${entries.length}')),
+        FilledButton(onPressed:()=>setState((){index=0;score=0;answered=false;}),child:Text(UiLanguage.t('إعادة الاختبار','Restart quiz')))
       ])
       : Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         LinearProgressIndicator(value:index/entries.length),
@@ -138,8 +139,8 @@ class _LearningScreenState extends State<LearningScreen> {
           }),
           child:Text(choice)),
         if(answered) ...[
-          Text('الصحيح: ${entries[index].value}'),
-          FilledButton(onPressed:()=>setState((){index++;answered=false;}),child:const Text('التالي')),
+          Text(UiLanguage.t('الصحيح: ${entries[index].value}','Correct: ${entries[index].value}')),
+          FilledButton(onPressed:()=>setState((){index++;answered=false;}),child:Text(UiLanguage.t('التالي','Next'))),
         ],
       ])),
   );
@@ -159,19 +160,19 @@ class _TranslationLibraryPageState extends State<TranslationLibraryPage> {
     if(mounted)setState(()=>items=loaded);
   }
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:Text(widget.favorites?'المفضلة':'سجل الترجمات'),actions:[
-      IconButton(tooltip:'مسح الكل',icon:const Icon(Icons.delete_sweep_outlined),onPressed:items.isEmpty?null:() async {
+    appBar:AppBar(title:Text(widget.favorites?UiLanguage.t('المفضلة','Favorites'):UiLanguage.t('سجل الترجمات','Translation history')),actions:[
+      IconButton(tooltip:UiLanguage.t('مسح الكل','Clear all'),icon:const Icon(Icons.delete_sweep_outlined),onPressed:items.isEmpty?null:() async {
         final confirm=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
-          title:const Text('مسح جميع العناصر؟'),
-          content:Text(widget.favorites?'سيتم حذف جميع الترجمات المفضلة.':'سيتم حذف سجل الترجمات بالكامل.'),
-          actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('إلغاء')),
-            FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('مسح'))]));
+          title:Text(UiLanguage.t('مسح جميع العناصر؟','Delete all items?')),
+          content:Text(widget.favorites?UiLanguage.t('سيتم حذف جميع الترجمات المفضلة.','All favorites will be deleted.'):UiLanguage.t('سيتم حذف سجل الترجمات بالكامل.','All translation history will be deleted.')),
+          actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:Text(UiLanguage.t('إلغاء','Cancel'))),
+            FilledButton(onPressed:()=>Navigator.pop(context,true),child:Text(UiLanguage.t('مسح','Delete')))]));
         if(confirm==true){await SavedTranslations.clear(favorite:widget.favorites);await refresh();}
       })]),
     body:Column(children:[
       Padding(padding:const EdgeInsets.all(12),child:TextField(
         onChanged:(v)=>setState(()=>search=v),
-        decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'بحث',border:OutlineInputBorder()))),
+        decoration:InputDecoration(prefixIcon:const Icon(Icons.search),hintText:UiLanguage.t('بحث','Search'),border:const OutlineInputBorder()))),
       Expanded(child:ListView(children:[
         for(final value in items.where((v)=>v.toLowerCase().contains(search.toLowerCase())))
           ListTile(title:Text(value),onTap:()=>Navigator.pop(context,value),trailing:IconButton(icon:const Icon(Icons.delete_outline),
