@@ -78,32 +78,32 @@ class _OfflineAudioPageState extends State<OfflineAudioPage> {
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(UiLanguage.t('تفريغ التسجيلات محليًا','Offline audio transcription'))),
     body:ListView(padding:const EdgeInsets.all(16),children:[
-      const Text('اختر ملفات نموذج Whisper ONNX المتوافقة: encoder وdecoder وtokens.txt، ثم ملف WAV أحادي القناة 16 kHz. المعالجة بالكامل على الهاتف، ولا يتم رفع الصوت أو النص لأي خادم.'),
+      Text(UiLanguage.t('اختر ملفات نموذج Whisper ONNX المتوافقة: encoder وdecoder وtokens.txt، ثم ملف WAV أحادي القناة 16 kHz. المعالجة بالكامل على الهاتف، ولا يتم رفع الصوت أو النص لأي خادم.','Select compatible Whisper ONNX files (encoder, decoder, tokens.txt), then a mono 16 kHz WAV. All processing is offline; audio and text never leave your phone.')),
       const SizedBox(height:12),
       OutlinedButton(onPressed:busy?null:() async {
         try {
           final path=await choose('encoder.onnx',['onnx']);
           if(path!=null && mounted)setState(()=>encoder=path);
         }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
-      },child:Text(encoder==null?'اختيار encoder.onnx':'تم اختيار Encoder')),
+      },child:Text(encoder==null?UiLanguage.t('اختيار encoder.onnx','Select encoder.onnx'):UiLanguage.t('تم اختيار Encoder','Encoder selected'))),
       OutlinedButton(onPressed:busy?null:() async {
         try {
           final path=await choose('decoder.onnx',['onnx']);
           if(path!=null && mounted)setState(()=>decoder=path);
         }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
-      },child:Text(decoder==null?'اختيار decoder.onnx':'تم اختيار Decoder')),
+      },child:Text(decoder==null?UiLanguage.t('اختيار decoder.onnx','Select decoder.onnx'):UiLanguage.t('تم اختيار Decoder','Decoder selected'))),
       OutlinedButton(onPressed:busy?null:() async {
         try {
           final path=await choose('tokens.txt',['txt']);
           if(path!=null && mounted)setState(()=>tokens=path);
         }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
-      },child:Text(tokens==null?'اختيار tokens.txt':'تم اختيار Tokens')),
+      },child:Text(tokens==null?UiLanguage.t('اختيار tokens.txt','Select tokens.txt'):UiLanguage.t('تم اختيار Tokens','Tokens selected'))),
       OutlinedButton(onPressed:busy?null:() async {
         try {
           final path=await choose('WAV',['wav']);
           if(path!=null && mounted)setState(()=>wav=path);
         }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
-      },child:Text(wav==null?'اختيار WAV للتفريغ':'تم اختيار WAV')),
+      },child:Text(wav==null?UiLanguage.t('اختيار WAV للتفريغ','Select WAV to transcribe'):UiLanguage.t('تم اختيار WAV','WAV selected'))),
       FilledButton.icon(
         onPressed:busy||encoder==null||decoder==null||tokens==null||wav==null?null:transcribe,
         icon:const Icon(Icons.record_voice_over),
