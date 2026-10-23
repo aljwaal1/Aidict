@@ -98,6 +98,13 @@ class _AidictAppState extends State<AidictApp> {
               Navigator.pop(sheetContext);
               _chooseLanguage();
             }),
+          ListTile(leading:const Icon(Icons.download_for_offline_outlined),
+            title:Text(ar?'نماذج الترجمة دون إنترنت':'Offline translation models'),
+            subtitle:Text(ar?'تنزيل العربية والإنجليزية وفحص جاهزيتهما':'Download and verify Arabic and English'),
+            onTap:(){
+              Navigator.pop(sheetContext);
+              Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>const LanguageModelSettingsPage()));
+            }),
           ListTile(leading:Icon(dark?Icons.light_mode:Icons.dark_mode),
             title:Text(ar?'تغيير المظهر':'Change theme'),
             onTap:(){
@@ -119,6 +126,68 @@ class _AidictAppState extends State<AidictApp> {
     home: loaded
       ? DashboardShell(toggleTheme:_toggleTheme,onSettings:_openSettings,language:uiLanguage??'ar')
       : const Scaffold(body:Center(child:CircularProgressIndicator())),
+  );
+}
+
+
+class LanguageModelSettingsPage extends StatefulWidget {
+  const LanguageModelSettingsPage({super.key});
+  @override State<LanguageModelSettingsPage> createState()=>_LanguageModelSettingsPageState();
+}
+class _LanguageModelSettingsPageState extends State<LanguageModelSettingsPage> {
+  final manager=OnDeviceTranslatorModelManager();
+  bool? arReady,enReady;
+  bool busy=false;
+  String status='';
+  @override void initState(){super.initState();check();}
+  Future<void> check() async {
+    try {
+      final ar=await manager.isModelDownloaded('ar');
+      final en=await manager.isModelDownloaded('en');
+      if(mounted)setState((){arReady=ar;enReady=en;});
+    }catch(e){if(mounted)setState(()=>status='$e');}
+  }
+  Future<void> download() async {
+    if(busy)return;
+    setState((){busy=true;status=UiLanguage.t('جارٍ تنزيل النماذج...','Downloading models...');});
+    try {
+      for(final language in ['ar','en']) {
+        if(!await manager.isModelDownloaded(language)){
+          if(!await manager.downloadModel(language))throw StateError('Download failed: $language');
+        }
+      }
+      await check();
+      if(mounted)setState(()=>status=arReady==true&&enReady==true
+        ?UiLanguage.t('تم التنزيل بنجاح؛ الترجمة جاهزة','Download successful; translation ready')
+        :UiLanguage.t('التحميل غير مكتمل','Download incomplete'));
+    }catch(e){if(mounted)setState(()=>status=UiLanguage.t('فشل التنزيل: ','Download failed: ')+'$e');}
+    finally{if(mounted)setState(()=>busy=false);}
+  }
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:Text(UiLanguage.t('نماذج اللغة','Language models'))),
+    body:ListView(padding:const EdgeInsets.all(16),children:[
+      Text(UiLanguage.t('يلزم تنزيل نماذج الترجمة مرة واحدة مع الإنترنت؛ وبعدها تعمل الترجمة محليًا.','Download the models once using the internet. Translation then works offline.')),
+      Card(child:Column(children:[
+        ListTile(leading:Icon(arReady==true?Icons.check_circle:Icons.download_outlined,
+          color:arReady==true?Colors.green:null),
+          title:Text(UiLanguage.t('العربية','Arabic')),
+          subtitle:Text(arReady==null?'...':arReady!?UiLanguage.t('مثبتة','Installed'):UiLanguage.t('غير مثبتة','Not installed'))),
+        const Divider(height:1),
+        ListTile(leading:Icon(enReady==true?Icons.check_circle:Icons.download_outlined,
+          color:enReady==true?Colors.green:null),
+          title:Text('English'),
+          subtitle:Text(enReady==null?'...':enReady!?UiLanguage.t('مثبتة','Installed'):UiLanguage.t('غير مثبتة','Not installed'))),
+      ])),
+      const SizedBox(height:12),
+      FilledButton.icon(onPressed:busy?null:download,icon:const Icon(Icons.download),
+        label:Text(arReady==true&&enReady==true
+          ?UiLanguage.t('اللغات جاهزة — إعادة التحقق','Languages ready — recheck')
+          :UiLanguage.t('تنزيل اللغات','Download languages'))),
+      if(busy)const LinearProgressIndicator(),
+      if(status.isNotEmpty)Padding(padding:const EdgeInsets.all(12),child:Text(status)),
+      OutlinedButton.icon(onPressed:busy?null:check,icon:const Icon(Icons.refresh),
+        label:Text(UiLanguage.t('تحديث الحالة','Refresh status'))),
+    ]),
   );
 }
 
