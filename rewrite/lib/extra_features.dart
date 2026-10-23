@@ -1,5 +1,6 @@
 import 'ui_language.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const words = <String,String>{
@@ -110,6 +111,13 @@ class _LearningScreenState extends State<LearningScreen> {
   final entries=words.entries.toList();
   int index=0,score=0;
   bool answered=false;
+  String? chosen;
+  final FlutterTts voice=FlutterTts();
+  Future<void> say(String word,String locale) async {
+    try {await voice.setLanguage(locale);await voice.speak(word);}
+    catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(UiLanguage.t('تعذر النطق: $e','Speech failed: $e'))));}
+  }
+  @override void dispose(){voice.stop();super.dispose();}
   List<String> get choices {
     if(index>=entries.length)return [];
     final correct=entries[index].value;
@@ -122,27 +130,63 @@ class _LearningScreenState extends State<LearningScreen> {
     return [...options.skip(shift),...options.take(shift)];
   }
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:Text(UiLanguage.t('اختبار المفردات','Vocabulary quiz'))),
-    body:Padding(padding:const EdgeInsets.all(16),child:index>=entries.length
-      ? Column(children:[
-        Text(UiLanguage.t('النتيجة: $score / ${entries.length}','Score: $score / ${entries.length}')),
-        FilledButton(onPressed:()=>setState((){index=0;score=0;answered=false;}),child:Text(UiLanguage.t('إعادة الاختبار','Restart quiz')))
-      ])
-      : Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-        LinearProgressIndicator(value:index/entries.length),
-        const SizedBox(height:20),
-        Text(entries[index].key,style:Theme.of(context).textTheme.headlineMedium),
-        for(final choice in choices) OutlinedButton(
-          onPressed:answered?null:()=>setState((){
-            answered=true;
-            if(choice==entries[index].value)score++;
-          }),
-          child:Text(choice)),
-        if(answered) ...[
-          Text(UiLanguage.t('الصحيح: ${entries[index].value}','Correct: ${entries[index].value}')),
-          FilledButton(onPressed:()=>setState((){index++;answered=false;}),child:Text(UiLanguage.t('التالي','Next'))),
-        ],
-      ])),
+    appBar:AppBar(title:Text(UiLanguage.t('تدريب المفردات','Vocabulary practice'))),
+    body:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
+      LinearProgressIndicator(value:index>=entries.length?1:(index+1)/entries.length),
+      const SizedBox(height:12),
+      Text('${index>=entries.length?entries.length:index+1} / ${entries.length}',
+        textAlign:TextAlign.center),
+      const SizedBox(height:16),
+      if(index>=entries.length)...[
+        Card(child:Padding(padding:const EdgeInsets.all(24),child:Column(children:[
+          const Icon(Icons.emoji_events,size:55,color:Colors.amber),
+          Text(UiLanguage.t('النتيجة: $score','Score: $score'),
+            style:Theme.of(context).textTheme.headlineMedium),
+        ]))),
+        FilledButton(onPressed:()=>setState((){
+          index=0;score=0;answered=false;chosen=null;
+        }),child:Text(UiLanguage.t('إعادة الاختبار','Restart quiz'))),
+      ]else...[
+        Card(color:Theme.of(context).colorScheme.primaryContainer,
+          child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[
+            Text(UiLanguage.t('استمع للكلمة ثم اختر معناها','Listen and choose the meaning')),
+            const SizedBox(height:12),
+            Text(entries[index].key,style:Theme.of(context).textTheme.headlineLarge),
+            IconButton.filledTonal(onPressed:()=>say(entries[index].key,'en-US'),
+              tooltip:UiLanguage.t('نطق الإنجليزية','Speak English'),
+              icon:const Icon(Icons.volume_up)),
+          ]))),
+        const SizedBox(height:12),
+        for(final choice in choices)
+          Padding(padding:const EdgeInsets.only(bottom:9),child:Card(
+            color:answered && choice==entries[index].value?Colors.green.shade100
+               :answered && choice==chosen?Colors.red.shade100:null,
+            child:Row(children:[
+              IconButton(onPressed:()=>say(choice,'ar'),
+                tooltip:UiLanguage.t('نطق العربية','Speak Arabic'),
+                icon:const Icon(Icons.volume_up_outlined)),
+              Expanded(child:ListTile(title:Text(choice),
+                trailing:answered&&choice==entries[index].value
+                  ?const Icon(Icons.check_circle,color:Colors.green)
+                  :answered&&choice==chosen
+                    ?const Icon(Icons.cancel,color:Colors.red):null,
+                onTap:answered?null:()=>setState((){
+                  answered=true;chosen=choice;
+                  if(choice==entries[index].value)score++;
+                }))),
+            ]),
+          )),
+        if(answered)Card(child:Padding(padding:const EdgeInsets.all(12),
+          child:Column(children:[
+            Text(UiLanguage.t('الإجابة الصحيحة: ${entries[index].value}',
+                'Correct answer: ${entries[index].value}')),
+            FilledButton.icon(onPressed:()=>setState((){
+              index++;answered=false;chosen=null;
+            }),icon:const Icon(Icons.arrow_forward),
+              label:Text(UiLanguage.t('التالي','Next'))),
+          ]))),
+      ],
+    ])),
   );
 }
 
