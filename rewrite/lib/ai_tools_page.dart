@@ -1,3 +1,4 @@
+import 'ui_language.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -89,7 +90,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
     text.dispose();super.dispose();
   }
   @override Widget build(BuildContext context)=>Scaffold(
-    appBar:AppBar(title:const Text('أدوات النص المحلية')),
+    appBar:AppBar(title:Text(UiLanguage.t('أدوات النص المحلية','Offline AI writing tools'))),
     body:ListView(padding:const EdgeInsets.all(16),children:[
       const Text('كل الأدوات في هذه الصفحة تعمل على الهاتف دون خادم أو API. '
         'التلخيص استخراجي؛ والتنسيق ليس تدقيقًا لغويًا بنموذج ذكاء اصطناعي.'),
@@ -100,9 +101,9 @@ class _AiToolsPageState extends State<AiToolsPage> {
       const SizedBox(height:12),
       Wrap(spacing:8,runSpacing:8,children:[
         FilledButton.icon(onPressed:()=>runOffline(true),
-          icon:const Icon(Icons.short_text),label:const Text('تلخيص محلي')),
+          icon:const Icon(Icons.short_text),label:Text(UiLanguage.t('تلخيص محلي','Offline summary'))),
         OutlinedButton.icon(onPressed:()=>runOffline(false),
-          icon:const Icon(Icons.format_align_left),label:const Text('تنسيق النص')),
+          icon:const Icon(Icons.format_align_left),label:Text(UiLanguage.t('تنسيق النص','Format text'))),
       ]),
       const SizedBox(height:12),
       const SizedBox(height:12),
@@ -110,11 +111,11 @@ class _AiToolsPageState extends State<AiToolsPage> {
       OutlinedButton.icon(onPressed:generating?null:chooseModel,
         icon:const Icon(Icons.folder_open),label:Text('اختيار نموذج GGUF: $modelName')),
       FilledButton.icon(onPressed:generating||!modelReady?null:rewriteLocally,
-        icon:const Icon(Icons.auto_fix_high),label:const Text('إعادة الصياغة محليًا بالنموذج')),
+        icon:const Icon(Icons.auto_fix_high),label:Text(UiLanguage.t('إعادة الصياغة محليًا بالنموذج','Rewrite using offline model'))),
       if(generating)const LinearProgressIndicator(),
       OutlinedButton.icon(onPressed:generating?null:()=>Navigator.push(context,
         MaterialPageRoute<void>(builder:(_)=>const OfflineAudioPage())),
-        icon:const Icon(Icons.audio_file),label:const Text('تفريغ ملف WAV باستخدام Whisper محليًا')),
+        icon:const Icon(Icons.audio_file),label:Text(UiLanguage.t('تفريغ ملف WAV باستخدام Whisper محليًا','Transcribe WAV using offline Whisper'))),
       const Text('يتطلب التفريغ توفير نموذج Whisper ONNX وملف WAV بتردد 16 kHz. لا يوجد تحويل تلقائي لـMP3 أو M4A بعد.'),
       if(error.isNotEmpty)Text(error,
         style:TextStyle(color:Theme.of(context).colorScheme.error)),
@@ -125,7 +126,7 @@ class _AiToolsPageState extends State<AiToolsPage> {
           FilledButton(onPressed:(){
             widget.onResult(result);
             Navigator.pop(context);
-          },child:const Text('إرسال النتيجة إلى المترجم')),
+          },child:Text(UiLanguage.t('إرسال النتيجة إلى المترجم','Send result to translator'))),
         ]))),
     ]),
   );
