@@ -1,3 +1,4 @@
+import 'ui_language.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image/image.dart' as img;
@@ -103,7 +104,7 @@ class _ReviewPhotoPageState extends State<_ReviewPhotoPage> {
   @override Widget build(BuildContext context){
     final raw=img.encodeJpg(picture,quality:85);
     return Scaffold(
-      appBar:AppBar(title:const Text('مراجعة الصورة قبل قراءة النص')),
+      appBar:AppBar(title:Text(UiLanguage.t('مراجعة الصورة قبل قراءة النص', 'Review image before OCR'))),
       body:SafeArea(child:Column(children:[
         const Padding(padding:EdgeInsets.all(12),
           child:Text('اسحب بإصبعك مستطيلاً حول النص لقصّه، أو استخرج النص من الصورة كاملة.')),
@@ -140,11 +141,11 @@ class _ReviewPhotoPageState extends State<_ReviewPhotoPage> {
         Padding(padding:const EdgeInsets.all(12),child:Wrap(
           spacing:10,runSpacing:8,alignment:WrapAlignment.center,children:[
             OutlinedButton.icon(onPressed:rotate,
-              icon:const Icon(Icons.rotate_right),label:const Text('تدوير 90°')),
+              icon:const Icon(Icons.rotate_right),label:Text(UiLanguage.t('تدوير 90°', 'Rotate 90°'))),
             OutlinedButton.icon(onPressed:()=>setState(()=>selection=null),
-              icon:const Icon(Icons.crop_free),label:const Text('الصورة كاملة')),
+              icon:const Icon(Icons.crop_free),label:Text(UiLanguage.t('الصورة كاملة', 'Full image'))),
             FilledButton.icon(onPressed:finish,
-              icon:const Icon(Icons.document_scanner),label:const Text('استخراج النص')),
+              icon:const Icon(Icons.document_scanner),label:Text(UiLanguage.t('استخراج النص', 'Extract text'))),
           ],
         )),
       ])),
