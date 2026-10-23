@@ -8,11 +8,14 @@ class HomeScreen extends StatelessWidget {
     required this.onFeature,
     required this.onHistory,
     required this.onSettings,
+    required this.language,
   });
 
   final ValueChanged<String> onFeature;
   final VoidCallback onHistory;
   final VoidCallback onSettings;
+  final String language;
+  String tr(String ar,String en)=>language=='ar'?ar:en;
 
   static const _blue = [Color(0xFF086BED), Color(0xFF34D0EF)];
   static const _violet = [Color(0xFF6269F8), Color(0xFFAD5CF2)];
@@ -25,7 +28,8 @@ class HomeScreen extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final compact = width < 360;
     final gutter = compact ? 10.0 : 13.0;
-    return Scaffold(
+    return Directionality(textDirection:language=='ar'?TextDirection.rtl:TextDirection.ltr,
+      child:Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? Theme.of(context).colorScheme.surface
           : const Color(0xFFF6F9FF),
@@ -41,67 +45,67 @@ class HomeScreen extends StatelessWidget {
                     child: Icon(Icons.language_rounded, size: 29, color: Color(0xFF126DEB))),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('AI Translator', style: Theme.of(context).textTheme.headlineSmall
+                    Text(tr('مترجم الذكاء الاصطناعي','AI Translator'), style: Theme.of(context).textTheme.headlineSmall
                         ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.6)),
-                    Text('Global translation and communication',
+                    Text(tr('الترجمة والتواصل بسهولة','Global translation and communication'),
                       maxLines: 2, style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ])),
-                  IconButton(tooltip: 'الإعدادات والمظهر', onPressed: onSettings,
+                  IconButton(tooltip: tr('الإعدادات','Settings'), onPressed: onSettings,
                     icon: const Icon(Icons.settings_outlined)),
                 ]),
                 const SizedBox(height: 20),
                 FeatureTile(
-                  title: 'AI photo recognition',
-                  subtitle: 'Extract Arabic and English text',
+                  title: tr('استخراج النص من الصور','AI photo recognition'),
+                  subtitle: tr('استخراج النص العربي والإنجليزي','Extract Arabic and English text'),
                   icon: Icons.photo_camera_outlined, colors: _blue,
                   height: 184, onTap: () => onFeature('photo'),
                 ),
                 SizedBox(height: gutter),
                 FeatureTile(
-                  title: 'AI photo translation',
-                  subtitle: 'Translate words inside images',
+                  title: tr('ترجمة الصور','AI photo translation'),
+                  subtitle: tr('ترجمة النصوص داخل الصور','Translate words inside images'),
                   icon: Icons.document_scanner_outlined, colors: _violet,
                   height: 184, onTap: () => onFeature('photo_translate'),
                 ),
                 SizedBox(height: gutter),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(child: FeatureTile(
-                    title: 'AI simultaneous interpretation',
-                    subtitle: 'Two-person voice conversation',
+                    title: tr('محادثة بين شخصين','AI simultaneous interpretation'),
+                    subtitle: tr('محادثة صوتية بلغتين','Two-person voice conversation'),
                     icon: Icons.record_voice_over_outlined,
                     colors: _aqua, height: 344 + gutter,
                     onTap: () => onFeature('conversation'),
                   )),
                   SizedBox(width: gutter),
                   Expanded(child: Column(children: [
-                    FeatureTile(title: 'AI real-time translation',
-                      subtitle: 'Speak and translate locally',
+                    FeatureTile(title: tr('ترجمة الكلام','AI real-time translation'),
+                      subtitle: tr('تكلم وترجم على الهاتف','Speak and translate locally'),
                       icon: Icons.translate_outlined, colors: _blue,
                       height: 172, onTap: () => onFeature('live')),
                     SizedBox(height: gutter),
-                    FeatureTile(title: 'AI chat',
-                      subtitle: 'Local writing and rewriting tools',
+                    FeatureTile(title: tr('المساعد اللغوي','AI chat'),
+                      subtitle: tr('أدوات الكتابة وإعادة الصياغة','Local writing and rewriting tools'),
                       icon: Icons.chat_bubble_outline_rounded, colors: _purple,
                       height: 172, onTap: () => onFeature('chat')),
                   ])),
                 ]),
                 SizedBox(height: gutter),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(child: FeatureTile(title: 'Oral English',
-                    subtitle: 'Speaking practice',
+                  Expanded(child: FeatureTile(title: tr('تدريب الإنجليزية','Oral English'),
+                    subtitle: tr('تدريب على المحادثة','Speaking practice'),
                     icon: Icons.mic_none_rounded, colors: _purple,
                     height: compact ? 215 : 220,
                     onTap: () => onFeature('english'), small: true)),
                   SizedBox(width: gutter),
-                  Expanded(child: FeatureTile(title: 'Convert audio to text',
-                    subtitle: 'Offline WAV transcription',
+                  Expanded(child: FeatureTile(title: tr('تفريغ الصوت','Convert audio to text'),
+                    subtitle: tr('تحويل WAV إلى نص','Offline WAV transcription'),
                     icon: Icons.graphic_eq_rounded, colors: _blue,
                     height: compact ? 215 : 220,
                     onTap: () => onFeature('audio'), small: true)),
                   SizedBox(width: gutter),
-                  Expanded(child: FeatureTile(title: 'Offline translation',
-                    subtitle: 'Arabic ↔ English',
+                  Expanded(child: FeatureTile(title: tr('ترجمة دون إنترنت','Offline translation'),
+                    subtitle: tr('عربي ↔ إنجليزي','Arabic ↔ English'),
                     icon: Icons.offline_bolt_outlined, colors: _teal,
                     height: compact ? 215 : 220,
                     onTap: () => onFeature('offline'), small: true)),
@@ -120,12 +124,12 @@ class HomeScreen extends StatelessWidget {
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.history_rounded), label: 'History'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+            selectedIcon: Icon(Icons.home_rounded), label: tr('الرئيسية','Home')),
+          NavigationDestination(icon: Icon(Icons.history_rounded), label: tr('السجل','History')),
+          NavigationDestination(icon: Icon(Icons.settings_outlined), label: tr('الإعدادات','Settings')),
         ],
       ),
-    );
+    ));
   }
 }
 
