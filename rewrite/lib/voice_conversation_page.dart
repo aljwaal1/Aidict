@@ -1,3 +1,4 @@
+import 'ui_language.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
@@ -107,32 +108,32 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
   }
 
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('محادثة صوتية بين شخصين')),
+    appBar: AppBar(title: Text(UiLanguage.t('محادثة صوتية بين شخصين','Two-person voice conversation'))),
     body: Directionality(textDirection:TextDirection.rtl,child:ListView(padding: const EdgeInsets.all(16), children: [
       const Text('التعرف على الصوت محلي فقط. قد تحتاج تثبيت حزم التعرف الصوتي العربية والإنجليزية على جهازك أولًا. لن نستخدم التعرف السحابي كبديل.'),
       const SizedBox(height: 20),
       Row(children: [
         Expanded(child: FilledButton.icon(
           onPressed: busy ? null : () => capture('ar'),
-          icon: const Icon(Icons.mic), label: const Text('المتحدث بالعربية'))),
+          icon: const Icon(Icons.mic), label: Text(UiLanguage.t('المتحدث بالعربية','Arabic speaker')))),
         const SizedBox(width: 8),
         Expanded(child: FilledButton.icon(
           onPressed: busy ? null : () => capture('en'),
-          icon: const Icon(Icons.mic), label: const Text('English speaker'))),
+          icon: const Icon(Icons.mic), label: Text(UiLanguage.t('English speaker','English speaker')))),
       ]),
       if (listening) ...[
-        const Text('الميكروفون يعمل — يمكنك إنهاء الاستماع الآن'),
+        Text(UiLanguage.t('الميكروفون يعمل — يمكنك إنهاء الاستماع الآن','Microphone active — stop listening when done')),
         OutlinedButton.icon(onPressed: () async {
           await speech.stop();
           if (mounted) setState(() => listening = false);
-        },icon:const Icon(Icons.stop_circle_outlined),label:const Text('إيقاف الاستماع')),
+        },icon:const Icon(Icons.stop_circle_outlined),label:Text(UiLanguage.t('إيقاف الاستماع','Stop listening'))),
       ],
       const SizedBox(height: 16),
       Text('الكلام المسموع:', style: Theme.of(context).textTheme.titleMedium),
       SelectableText(recognized.isEmpty ? '—' : recognized),
       if (recognized.isNotEmpty) TextButton.icon(
         onPressed:()=>Clipboard.setData(ClipboardData(text:recognized)),
-        icon:const Icon(Icons.copy),label:const Text('نسخ الكلام')),
+        icon:const Icon(Icons.copy),label:Text(UiLanguage.t('نسخ الكلام','Copy speech'))),
       const SizedBox(height: 12),
       TextField(controller: manual, maxLines: 2,
         decoration: InputDecoration(labelText: 'إدخال النص يدويًا عند تعذر التعرف الصوتي',
@@ -143,17 +144,17 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
         onSubmitted: (value) => setState(() { recognized=value.trim(); message=''; })),
       const SizedBox(height: 12),
       FilledButton(onPressed: busy || recognized.trim().isEmpty ? null : translateCaptured,
-        child: const Text('ترجمة ونطق')),
+        child: Text(UiLanguage.t('ترجمة ونطق','Translate and speak'))),
       const SizedBox(height: 16),
       Text('الترجمة:', style: Theme.of(context).textTheme.titleMedium),
       SelectableText(translated.isEmpty ? '—' : translated),
       if (translated.isNotEmpty) Wrap(children:[
         TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:translated)),
-          icon:const Icon(Icons.copy),label:const Text('نسخ الترجمة')),
+          icon:const Icon(Icons.copy),label:Text(UiLanguage.t('نسخ الترجمة','Copy translation'))),
         TextButton.icon(onPressed:() async {
           await tts.setLanguage(target=='ar'?'ar':'en-US');
           await tts.speak(translated);
-        },icon:const Icon(Icons.volume_up),label:const Text('إعادة النطق')),
+        },icon:const Icon(Icons.volume_up),label:Text(UiLanguage.t('إعادة النطق','Speak again'))),
       ]),
       if (message.isNotEmpty) Text(message),
     ])),
