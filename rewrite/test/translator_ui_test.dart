@@ -28,4 +28,13 @@ void main() {
     expect(find.text('Aidict • Translator'), findsOneWidget);
     expect(find.text('Translate simply'), findsOneWidget);
   });
+  testWidgets('Settings opens and exposes model management', (tester) async {
+    await tester.pumpWidget(const AidictApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Settings').first);
+    await tester.pumpAndSettle();
+    expect(find.text('App language'), findsOneWidget);
+    expect(find.text('Offline translation models'), findsOneWidget);
+  });
+
 }
