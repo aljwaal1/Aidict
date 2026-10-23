@@ -26,6 +26,6 @@ void main() {
     await tester.tap(find.text('Offline translation'));
     await tester.pumpAndSettle();
     expect(find.text('Aidict • Translator'), findsOneWidget);
-    expect(find.text('Translate, learn and speak'), findsOneWidget);
+    expect(find.text('Translate simply'), findsOneWidget);
   });
 }
