@@ -109,8 +109,8 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
 
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(UiLanguage.t('محادثة صوتية بين شخصين','Two-person voice conversation'))),
-    body: Directionality(textDirection:TextDirection.rtl,child:ListView(padding: const EdgeInsets.all(16), children: [
-      const Text('التعرف على الصوت محلي فقط. قد تحتاج تثبيت حزم التعرف الصوتي العربية والإنجليزية على جهازك أولًا. لن نستخدم التعرف السحابي كبديل.'),
+    body: Directionality(textDirection:UiLanguage.arabic?TextDirection.rtl:TextDirection.ltr,child:ListView(padding: const EdgeInsets.all(16), children: [
+      Text(UiLanguage.t('التعرف على الصوت محلي فقط. قد تحتاج تثبيت حزم التعرف الصوتي العربية والإنجليزية على جهازك أولًا. لن نستخدم التعرف السحابي كبديل.','Voice recognition works offline only. Install Arabic and English offline speech recognition languages on your device if necessary. Cloud recognition is not used.')),
       const SizedBox(height: 20),
       Row(children: [
         Expanded(child: FilledButton.icon(
@@ -129,16 +129,16 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
         },icon:const Icon(Icons.stop_circle_outlined),label:Text(UiLanguage.t('إيقاف الاستماع','Stop listening'))),
       ],
       const SizedBox(height: 16),
-      Text('الكلام المسموع:', style: Theme.of(context).textTheme.titleMedium),
+      Text(UiLanguage.t('الكلام المسموع:','Recognized speech:'), style: Theme.of(context).textTheme.titleMedium),
       SelectableText(recognized.isEmpty ? '—' : recognized),
       if (recognized.isNotEmpty) TextButton.icon(
         onPressed:()=>Clipboard.setData(ClipboardData(text:recognized)),
         icon:const Icon(Icons.copy),label:Text(UiLanguage.t('نسخ الكلام','Copy speech'))),
       const SizedBox(height: 12),
       TextField(controller: manual, maxLines: 2,
-        decoration: InputDecoration(labelText: 'إدخال النص يدويًا عند تعذر التعرف الصوتي',
+        decoration: InputDecoration(labelText: UiLanguage.t('إدخال النص يدويًا عند تعذر التعرف الصوتي','Type text if speech recognition is unavailable'),
           border: const OutlineInputBorder(),
-          suffixIcon: IconButton(tooltip:'استخدام النص المكتوب',
+          suffixIcon: IconButton(tooltip:UiLanguage.t('استخدام النص المكتوب','Use typed text'),
             onPressed: () => setState(() { recognized = manual.text.trim(); message = ''; }),
             icon: const Icon(Icons.check_circle_outline))),
         onSubmitted: (value) => setState(() { recognized=value.trim(); message=''; })),
@@ -146,7 +146,7 @@ class _VoiceConversationPageState extends State<VoiceConversationPage> {
       FilledButton(onPressed: busy || recognized.trim().isEmpty ? null : translateCaptured,
         child: Text(UiLanguage.t('ترجمة ونطق','Translate and speak'))),
       const SizedBox(height: 16),
-      Text('الترجمة:', style: Theme.of(context).textTheme.titleMedium),
+      Text(UiLanguage.t('الترجمة:','Translation:'), style: Theme.of(context).textTheme.titleMedium),
       SelectableText(translated.isEmpty ? '—' : translated),
       if (translated.isNotEmpty) Wrap(children:[
         TextButton.icon(onPressed:()=>Clipboard.setData(ClipboardData(text:translated)),
