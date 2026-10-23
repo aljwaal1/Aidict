@@ -110,6 +110,9 @@ class _AidictAppState extends State<AidictApp> {
   }
   @override Widget build(BuildContext context) => MaterialApp(
     title:'Aidict', debugShowCheckedModeBanner:false,
+    builder:(context,child)=>Directionality(
+      textDirection:UiLanguage.arabic?TextDirection.rtl:TextDirection.ltr,
+      child:child??const SizedBox.shrink()),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     theme: ThemeData(useMaterial3:true,colorSchemeSeed:const Color(0xFF007F86),scaffoldBackgroundColor:const Color(0xFFF5F9FA),appBarTheme:const AppBarTheme(centerTitle:false),cardTheme:CardThemeData(elevation:0,color:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
     darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorSchemeSeed:const Color(0xFF22BDC2),cardTheme:const CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),
@@ -327,19 +330,19 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         Card(color:Theme.of(context).colorScheme.primaryContainer,
           child:Padding(padding:const EdgeInsets.all(18),child:Column(
             crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text('ترجم، تعلّم، وتحدث',style:Theme.of(context).textTheme.titleLarge),
+              Text(UiLanguage.t('ترجم، تعلّم، وتحدث','Translate, learn and speak'),style:Theme.of(context).textTheme.titleLarge),
               const SizedBox(height:6),
-              const Text('ترجمة عربي ↔ إنجليزي على الجهاز بعد تنزيل النماذج مرة واحدة'),
+              Text(UiLanguage.t('ترجمة عربي ↔ إنجليزي على الجهاز بعد تنزيل النماذج مرة واحدة','Offline Arabic ↔ English after downloading models once')),
             ]))),
         const SizedBox(height:16),
-        const Card(child:Padding(padding:EdgeInsets.all(12),
+        Card(child:Padding(padding:const EdgeInsets.all(12),
           child:Row(children:[Icon(Icons.phonelink_off),SizedBox(width:8),
             Expanded(child:Text('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة'))]))),
         OutlinedButton.icon(onPressed:busy?null:download,
           icon:const Icon(Icons.download),label:Text(UiLanguage.t('تنزيل العربية والإنجليزية','Download Arabic and English'))),
         Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
           crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-          Text('١. اتجاه الترجمة — مطلوب',
+          Text(UiLanguage.t('١. اتجاه الترجمة — مطلوب','1. Translation direction — Required'),
             style:Theme.of(context).textTheme.titleMedium),
           Text(UiLanguage.t('اختر اتجاهًا واحدًا؛ تتحدد اللغة الثانية تلقائيًا.','Choose one direction; the other language is set automatically.')),
           const SizedBox(height:10),
@@ -357,7 +360,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         ]))),
         const SizedBox(height:16),
         TextField(controller:input,minLines:3,maxLines:6,
-          decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'٢. النص المراد ترجمته — مطلوب')),
+          decoration:InputDecoration(border:const OutlineInputBorder(),labelText:UiLanguage.t('٢. النص المراد ترجمته — مطلوب','2. Enter text — Required'))),
         if(input.text.trim().isNotEmpty)Padding(
           padding:const EdgeInsets.symmetric(vertical:6),
           child:Text('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}')),
