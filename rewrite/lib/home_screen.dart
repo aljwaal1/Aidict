@@ -122,7 +122,7 @@ class HomeScreen extends StatelessWidget {
           if (index == 1) onHistory();
           if (index == 2) onSettings();
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home_rounded), label: tr('الرئيسية','Home')),
           NavigationDestination(icon: Icon(Icons.history_rounded), label: tr('السجل','History')),
