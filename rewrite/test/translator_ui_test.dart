@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aidict/main.dart';
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() => SharedPreferences.setMockInitialValues({'aidict.ui_language.v1':'en'}));
 
   testWidgets('Dashboard shows core feature cards', (tester) async {
     await tester.pumpWidget(const AidictApp());
