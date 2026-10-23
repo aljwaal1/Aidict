@@ -124,7 +124,6 @@ class _OfflineAudioPageState extends State<OfflineAudioPage> {
         }catch(e){if(mounted)setState(()=>error='تعذر فتح الملف: $e');}
       },child:Text(tokens==null?UiLanguage.t('اختيار tokens.txt','Select tokens.txt'):UiLanguage.t('تم اختيار Tokens','Tokens selected'))),
         ])),
-      ),
       const SizedBox(height:12),
       Text(UiLanguage.t('٣. تحويل التسجيل','3. Transcribe recording'),
         style:Theme.of(context).textTheme.titleMedium),
