@@ -77,7 +77,13 @@ class _AidictAppState extends State<AidictApp> {
         ),
       ),
     );
-    if(picked!=null)await _setLanguage(picked);
+    if(picked!=null){
+      await _setLanguage(picked);
+      if(firstTime && mounted){
+        Navigator.push<void>(context,MaterialPageRoute<void>(
+          builder:(_)=>const LanguageModelSettingsPage()));
+      }
+    }
   }
   Future<void> _openSettings() async {
     if(!mounted)return;
@@ -223,6 +229,8 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   bool busy=false;
   bool? modelsReady;
   bool downloadingModels=false;
+  String? lastSpokenLocale;
+  bool detectLanguageAutomatically=true;
   String modelStatus='';
   String inputSource='type';
   @override void initState(){
@@ -244,6 +252,14 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   }
   void _refreshInputStats(){
     if(!mounted)return;
+    if(detectLanguageAutomatically){
+      final ar=RegExp(r'[\u0600-\u06FF]').allMatches(input.text).length;
+      final en=RegExp(r'[A-Za-z]').allMatches(input.text).length;
+      if(ar+en>=2 && ar!=en){
+        final detected=ar>en?'ar':'en';
+        if(detected!=source){source=detected;target=detected=='ar'?'en':'ar';output='';}
+      }
+    }
     // A previously translated result must not be presented as the translation
     // of newly edited source text.
     if(output.isNotEmpty && input.text!=_translatedInput){
@@ -398,13 +414,15 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   Future<void> speakText(String value, String language) async {
     if(value.trim().isEmpty)return;
     try {
-      await tts.stop();
       final locale=SpeechLocales.forLanguage(language);
-      final available=await tts.isLanguageAvailable(locale);
-      if(available==false || available==0 || available=='0') {
-        throw StateError('صوت $locale غير مثبت على الهاتف؛ ثبّت بيانات النطق من إعدادات تحويل النص إلى كلام');
+      if(lastSpokenLocale!=locale){
+        final available=await tts.isLanguageAvailable(locale);
+        if(available==false || available==0 || available=='0') {
+          throw StateError('صوت $locale غير مثبت على الهاتف؛ ثبّت بيانات النطق من إعدادات تحويل النص إلى كلام');
+        }
+        await tts.setLanguage(locale);
+        lastSpokenLocale=locale;
       }
-      await tts.setLanguage(locale);
       await tts.speak(value);
     } catch(e) {if(mounted)setState(()=>message='تعذر النطق: $e');}
   }
@@ -481,12 +499,20 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
               style:Theme.of(context).textTheme.titleMedium),
             const SizedBox(height:6),
             Text(UiLanguage.t('حدّد الاتجاه بوضوح؛ يدعم التطبيق العربية والإنجليزية.','Choose the direction; Arabic and English are supported.')),
+            SwitchListTile.adaptive(
+              contentPadding:EdgeInsets.zero,
+              title:Text(UiLanguage.t('اكتشاف اللغة تلقائيًا','Detect text language automatically')),
+              subtitle:Text(UiLanguage.t('يمكنك إيقافه لتحديد الاتجاه بنفسك','Turn off to choose manually')),
+              value:detectLanguageAutomatically,
+              onChanged:(v)=>setState((){detectLanguageAutomatically=v;_refreshInputStats();}),
+            ),
+            Text(UiLanguage.t('اللغة الحالية: ','Current language: ')+(source=='ar'?UiLanguage.t('العربية','Arabic'):'English')),
             const SizedBox(height:9),
             SegmentedButton<String>(segments:[
               ButtonSegment(value:'ar',label:Text(UiLanguage.t('عربي ← إنجليزي','Arabic → English'))),
               ButtonSegment(value:'en',label:Text(UiLanguage.t('إنجليزي ← عربي','English → Arabic'))),
             ],selected:{source},onSelectionChanged:busy?null:(v)=>setState((){
-              source=v.first;target=source=='ar'?'en':'ar';output='';
+              source=v.first;target=source=='ar'?'en':'ar';output='';detectLanguageAutomatically=false;
             })),
           ]))),
         const SizedBox(height:12),
