@@ -257,30 +257,33 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             Expanded(child:Text('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة'))]))),
         OutlinedButton.icon(onPressed:busy?null:download,
           icon:const Icon(Icons.download),label:const Text('تنزيل العربية والإنجليزية')),
-        Row(children:[
-          Expanded(child:DropdownButtonFormField<String>(
-            key:ValueKey('source-$source'),
-            initialValue:source,
-            items:languages.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
-            onChanged:busy?null:(v)=>setState((){
-              if(v==null){return;} source=v;target=v=='ar'?'en':'ar';
-            }))),
-          IconButton(tooltip:'تبديل اللغات والنصوص',onPressed:busy?null:reverseLanguages,icon:const Icon(Icons.swap_horiz)),
-          Expanded(child:DropdownButtonFormField<String>(
-            key:ValueKey('target-$target'),
-            initialValue:target,
-            items:languages.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
-            onChanged:busy?null:(v)=>setState((){
-              if(v==null){return;} target=v;source=v=='ar'?'en':'ar';
-            }))),
-        ]),
+        Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
+          crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          Text('١. اتجاه الترجمة — مطلوب',
+            style:Theme.of(context).textTheme.titleMedium),
+          const Text('اختر اتجاهًا واحدًا؛ تتحدد اللغة الثانية تلقائيًا.'),
+          const SizedBox(height:10),
+          SegmentedButton<String>(
+            segments:const [
+              ButtonSegment(value:'ar',label:Text('عربي ← إنجليزي')),
+              ButtonSegment(value:'en',label:Text('English → عربي')),
+            ],
+            selected:{source},
+            onSelectionChanged:busy?null:(values)=>setState((){
+              source=values.first;target=source=='ar'?'en':'ar';output='';
+            }),
+          ),
+          Text('المحدد: ${source=='ar'?'العربية إلى الإنجليزية':'الإنجليزية إلى العربية'}'),
+        ]))),
         const SizedBox(height:16),
         TextField(controller:input,minLines:3,maxLines:6,
-          decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'النص')),
+          decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'٢. النص المراد ترجمته — مطلوب')),
         if(input.text.trim().isNotEmpty)Padding(
           padding:const EdgeInsets.symmetric(vertical:6),
           child:Text('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}')),
-        Wrap(spacing:8,children:[
+        ExpansionTile(title:const Text('إدراج وتنظيف النص'),
+          subtitle:const Text('اختياري — الكاميرا، PDF، الصورة والمعاينة'),
+          children:[Wrap(spacing:8,children:[
           OutlinedButton.icon(onPressed:busy?null:showDocumentPreview,icon:const Icon(Icons.preview),label:const Text('معاينة النص')),
           OutlinedButton.icon(onPressed:busy?null:cleanImportedText,
           icon:const Icon(Icons.auto_fix_high),label:const Text('تنظيف النص')),
@@ -296,8 +299,9 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             icon:const Icon(Icons.description_outlined),label:const Text('PDF / Word / TXT')),
         ]),
         const Padding(padding:EdgeInsets.only(top:8),child:Text('التعرف على النص العربي والإنجليزي من الصور وملفات PDF المصورة يعمل محليًا على الهاتف.')),
+        ]),
         const SizedBox(height:12),
-        FilledButton(onPressed:busy?null:translate,child:const Text('ترجمة')),
+        FilledButton(onPressed:busy?null:translate,child:const Text('٣. ترجمة النص')),
         if(busy)const LinearProgressIndicator(),
         if(message.isNotEmpty)Text(message),
         if(hasTranslation)Card(child:Padding(padding:const EdgeInsets.all(16),
