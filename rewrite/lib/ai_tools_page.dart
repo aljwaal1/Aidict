@@ -104,18 +104,32 @@ class _AiToolsPageState extends State<AiToolsPage> {
         OutlinedButton.icon(onPressed:()=>runOffline(false),
           icon:const Icon(Icons.format_align_left),label:Text(UiLanguage.t('تنسيق النص','Format text'))),
       ]),
+      Card(child:ExpansionTile(
+        leading:const Icon(Icons.auto_awesome,color:Colors.purple),
+        title:Text(UiLanguage.t('إعادة الصياغة الذكية','AI rewriting')),
+        subtitle:Text(UiLanguage.t(
+          'اختياري — يحتاج نموذجًا محليًا متوافقًا على الهاتف',
+          'Optional — requires a compatible offline model')),
+        children:[
+          Padding(padding:const EdgeInsets.all(12),child:Column(
+            crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+              Text(UiLanguage.t(
+                'النموذج المحلي: لا تُرسل بياناتك إلى أي خادم. يمكن استيراد نموذج GGUF من الهاتف.',
+                'Local model: no data leaves the device. Import a GGUF model from your phone.')),
+              OutlinedButton.icon(onPressed:generating?null:chooseModel,
+                icon:const Icon(Icons.folder_open),
+                label:Text(UiLanguage.t('استيراد نموذج ذكاء اصطناعي','Import AI model'))),
+              Text(modelReady?UiLanguage.t('جاهز: $modelName','Ready: $modelName'):
+                UiLanguage.t('النموذج غير مجهز','Model not configured')),
+              FilledButton.icon(onPressed:generating||!modelReady?null:rewriteLocally,
+                icon:const Icon(Icons.auto_fix_high),
+                label:Text(UiLanguage.t('إعادة صياغة النص','Rewrite text'))),
+              if(generating)const LinearProgressIndicator(),
+            ])),
+          ),
+        ],
+      )),
       const SizedBox(height:12),
-      const SizedBox(height:12),
-      Text(UiLanguage.t('إعادة صياغة بالذكاء الاصطناعي على الجهاز: اختر نموذج GGUF متوافقًا محفوظًا على هاتفك. لا ترفع النصوص إلى أي خادم.','To rewrite offline with AI, select a compatible GGUF model stored on your phone. No text is uploaded.')),
-      OutlinedButton.icon(onPressed:generating?null:chooseModel,
-        icon:const Icon(Icons.folder_open),label:Text(UiLanguage.t('اختيار نموذج GGUF: $modelName','Select GGUF model: $modelName'))),
-      FilledButton.icon(onPressed:generating||!modelReady?null:rewriteLocally,
-        icon:const Icon(Icons.auto_fix_high),label:Text(UiLanguage.t('إعادة الصياغة محليًا بالنموذج','Rewrite using offline model'))),
-      if(generating)const LinearProgressIndicator(),
-      OutlinedButton.icon(onPressed:generating?null:()=>Navigator.push(context,
-        MaterialPageRoute<void>(builder:(_)=>const OfflineAudioPage())),
-        icon:const Icon(Icons.audio_file),label:Text(UiLanguage.t('تفريغ ملف WAV باستخدام Whisper محليًا','Transcribe WAV using offline Whisper'))),
-      Text(UiLanguage.t('يتطلب التفريغ توفير نموذج Whisper ONNX وملف WAV بتردد 16 kHz. لا يوجد تحويل تلقائي لـMP3 أو M4A بعد.','Transcription requires a Whisper ONNX model and a 16 kHz WAV file. MP3 and M4A conversion is not yet available.')),
       if(error.isNotEmpty)Text(error,
         style:TextStyle(color:Theme.of(context).colorScheme.error)),
       if(result.isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(12),
