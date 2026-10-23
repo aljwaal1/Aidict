@@ -126,7 +126,6 @@ class _AiToolsPageState extends State<AiToolsPage> {
                 label:Text(UiLanguage.t('إعادة صياغة النص','Rewrite text'))),
               if(generating)const LinearProgressIndicator(),
             ])),
-          ),
         ],
       )),
       const SizedBox(height:12),
