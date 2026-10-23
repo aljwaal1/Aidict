@@ -11,6 +11,7 @@ import 'voice_conversation_page.dart';
 import 'text_preparation.dart';
 import 'ai_tools_page.dart';
 import 'home_screen.dart';
+import 'ui_language.dart';
 import 'offline_audio_page.dart';
 import 'speech_locales.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,6 +34,7 @@ class _AidictAppState extends State<AidictApp> {
       dark=prefs.getBool('aidict.dark.v1')??false;
       final saved=prefs.getString('aidict.ui_language.v1');
       uiLanguage=saved=='ar'||saved=='en'?saved:null;
+      UiLanguage.code=uiLanguage??'ar';
       loaded=true;
     });
     if(uiLanguage==null){
@@ -49,7 +51,7 @@ class _AidictAppState extends State<AidictApp> {
   Future<void> _setLanguage(String code) async {
     final prefs=await SharedPreferences.getInstance();
     await prefs.setString('aidict.ui_language.v1',code);
-    if(mounted)setState(()=>uiLanguage=code);
+    if(mounted)setState((){uiLanguage=code;UiLanguage.code=code;});
   }
   Future<void> _chooseLanguage({bool firstTime=false}) async {
     if(!mounted)return;
@@ -319,7 +321,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   @override void dispose(){input.removeListener(_refreshInputStats);input.dispose();tts.stop();super.dispose();}
   @override Widget build(BuildContext context) {
     return Scaffold(
-      appBar:AppBar(title:const Text('Aidict • المترجم'),
+      appBar:AppBar(title:Text(UiLanguage.t('Aidict • المترجم','Aidict • Translator')),
         actions:[IconButton(onPressed:widget.toggleTheme,icon:const Icon(Icons.dark_mode))]),
       body:ListView(padding:const EdgeInsets.all(16),children:[
         Card(color:Theme.of(context).colorScheme.primaryContainer,
@@ -334,17 +336,17 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           child:Row(children:[Icon(Icons.phonelink_off),SizedBox(width:8),
             Expanded(child:Text('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة'))]))),
         OutlinedButton.icon(onPressed:busy?null:download,
-          icon:const Icon(Icons.download),label:const Text('تنزيل العربية والإنجليزية')),
+          icon:const Icon(Icons.download),label:Text(UiLanguage.t('تنزيل العربية والإنجليزية','Download Arabic and English'))),
         Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
           crossAxisAlignment:CrossAxisAlignment.stretch,children:[
           Text('١. اتجاه الترجمة — مطلوب',
             style:Theme.of(context).textTheme.titleMedium),
-          const Text('اختر اتجاهًا واحدًا؛ تتحدد اللغة الثانية تلقائيًا.'),
+          Text(UiLanguage.t('اختر اتجاهًا واحدًا؛ تتحدد اللغة الثانية تلقائيًا.','Choose one direction; the other language is set automatically.')),
           const SizedBox(height:10),
           SegmentedButton<String>(
             segments:const [
-              ButtonSegment(value:'ar',label:Text('عربي ← إنجليزي')),
-              ButtonSegment(value:'en',label:Text('English → عربي')),
+              ButtonSegment(value:'ar',label:Text(UiLanguage.t('عربي ← إنجليزي','Arabic → English'))),
+              ButtonSegment(value:'en',label:Text(UiLanguage.t('English → عربي','English → Arabic'))),
             ],
             selected:{source},
             onSelectionChanged:busy?null:(values)=>setState((){
@@ -361,41 +363,41 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           child:Text('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}')),
         Card(child:ExpansionTile(
           leading:const Icon(Icons.widgets_outlined),
-          title:const Text('مصادر النص والأدوات'),
-          subtitle:const Text('اختياري • اختر أداة واحدة عند الحاجة'),
+          title:Text(UiLanguage.t('مصادر النص والأدوات','Text sources and tools')),
+          subtitle:Text(UiLanguage.t('اختياري • اختر أداة واحدة عند الحاجة','Optional • Choose a tool when needed')),
           children:[
             ListTile(leading:const Icon(Icons.camera_alt_outlined,color:Colors.blue),
-              title:const Text('تصوير نص بالكاميرا'),
-              subtitle:const Text('التقاط صورة، قص الجزء المطلوب، ثم استخراج النص'),
+              title:Text(UiLanguage.t('تصوير نص بالكاميرا','Scan text with camera')),
+              subtitle:Text(UiLanguage.t('التقاط صورة، قص الجزء المطلوب، ثم استخراج النص','Take a photo, crop, then recognize text')),
               trailing:const Icon(Icons.chevron_left),
               enabled:!busy,onTap:()=>importImage(true)),
             ListTile(leading:const Icon(Icons.photo_library_outlined,color:Colors.purple),
-              title:const Text('اختيار صورة'),
-              subtitle:const Text('استخراج نص عربي أو إنجليزي من المعرض'),
+              title:Text(UiLanguage.t('اختيار صورة','Choose an image')),
+              subtitle:Text(UiLanguage.t('استخراج نص عربي أو إنجليزي من المعرض','Extract Arabic or English text from gallery')),
               trailing:const Icon(Icons.chevron_left),
               enabled:!busy,onTap:()=>importImage(false)),
             ListTile(leading:const Icon(Icons.picture_as_pdf_outlined,color:Colors.redAccent),
-              title:const Text('قراءة مستند'),
-              subtitle:const Text('PDF أو Word أو TXT'),
+              title:Text(UiLanguage.t('قراءة مستند','Read document')),
+              subtitle:Text(UiLanguage.t('PDF أو Word أو TXT','PDF, Word or TXT')),
               trailing:const Icon(Icons.chevron_left),
               enabled:!busy,onTap:importDocument),
             const Divider(),
             ListTile(leading:const Icon(Icons.preview_outlined),
-              title:const Text('معاينة النص'),
-              subtitle:const Text('اختياري • مراجعة قبل الترجمة'),
+              title:Text(UiLanguage.t('معاينة النص','Preview text')),
+              subtitle:Text(UiLanguage.t('اختياري • مراجعة قبل الترجمة','Optional • Review before translating')),
               enabled:!busy,onTap:showDocumentPreview),
             ListTile(leading:const Icon(Icons.auto_fix_high),
-              title:const Text('تنظيف النص'),
-              subtitle:const Text('اختياري • تحسين تنسيق النص'),
+              title:Text(UiLanguage.t('تنظيف النص','Clean text')),
+              subtitle:Text(UiLanguage.t('اختياري • تحسين تنسيق النص','Optional • Improve formatting')),
               enabled:!busy,onTap:cleanImportedText),
             ListTile(leading:const Icon(Icons.delete_outline),
-              title:const Text('مسح النص'),
-              subtitle:const Text('اختياري • بدء إدخال جديد'),
+              title:Text(UiLanguage.t('مسح النص','Clear text')),
+              subtitle:Text(UiLanguage.t('اختياري • بدء إدخال جديد','Optional • Start again')),
               enabled:!busy,onTap:clearText),
           ],
         )),
         const SizedBox(height:12),
-        FilledButton(onPressed:busy?null:translate,child:const Text('٣. ترجمة النص')),
+        FilledButton(onPressed:busy?null:translate,child:Text(UiLanguage.t('٣. ترجمة النص','3. Translate text'))),
         if(busy)const LinearProgressIndicator(),
         if(message.isNotEmpty)Text(message),
         if(hasTranslation)Card(child:Padding(padding:const EdgeInsets.all(16),
@@ -428,14 +430,14 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
           OutlinedButton.icon(onPressed:() async {
             final clip=await Clipboard.getData(Clipboard.kTextPlain);
             if(clip?.text!=null)input.text=clip!.text!;
-          },icon:const Icon(Icons.paste),label:const Text('لصق')),
-          OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>local(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:const Text('محادثة صوتية')),
-          OutlinedButton.icon(onPressed:openAiTools,icon:const Icon(Icons.auto_awesome),label:const Text('أدوات الكتابة المحلية')),
-          OutlinedButton(onPressed:()=>openSavedTranslations(false),child:const Text('السجل')),
-          OutlinedButton(onPressed:()=>openSavedTranslations(true),child:const Text('المفضلة')),
-          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:const Text('تعلم الكلمات')),
+          },icon:const Icon(Icons.paste),label:Text(UiLanguage.t('لصق','Paste'))),
+          OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>VoiceConversationPage(translate:(text,s,t)=>local(text,sourceCode:s,targetCode:t)))),icon:const Icon(Icons.mic),label:Text(UiLanguage.t('محادثة صوتية','Voice conversation'))),
+          OutlinedButton.icon(onPressed:openAiTools,icon:const Icon(Icons.auto_awesome),label:Text(UiLanguage.t('أدوات الكتابة المحلية','Offline writing tools'))),
+          OutlinedButton(onPressed:()=>openSavedTranslations(false),child:Text(UiLanguage.t('السجل','History'))),
+          OutlinedButton(onPressed:()=>openSavedTranslations(true),child:Text(UiLanguage.t('المفضلة','Favorites'))),
+          OutlinedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const LearningScreen())),child:Text(UiLanguage.t('تعلم الكلمات','Learn words'))),
         ]),
-        ExpansionTile(title:const Text('قاموس عربي–إنجليزي'),children:[
+        ExpansionTile(title:Text(UiLanguage.t('قاموس عربي–إنجليزي','Arabic–English dictionary')),children:[
           TextField(onChanged:(v)=>setState(()=>dictionaryQuery=v),decoration:const InputDecoration(hintText:'ابحث عن كلمة',border:OutlineInputBorder())),
           if(dictionaryQuery.trim().isNotEmpty)
             ...searchWords(dictionaryQuery,limit:12).map((entry)=>ListTile(
@@ -450,7 +452,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             )),
           if(dictionaryQuery.trim().isNotEmpty&&searchWords(dictionaryQuery).isEmpty)
             const Padding(padding:EdgeInsets.all(12),
-              child:Text('لا توجد نتائج في القاموس المحلي المصغر.')),
+              child:Text(UiLanguage.t('لا توجد نتائج في القاموس المحلي المصغر.','No matches in the offline dictionary.'))),
         ]),
       ]));
   }
