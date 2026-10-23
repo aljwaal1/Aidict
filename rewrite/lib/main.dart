@@ -229,10 +229,10 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     final text=TextPreparation.normalize(input.text);
     if(text.isEmpty) {return;}
     showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
-      title:const Text('معاينة النص المستخرج'),
+      title:Text(UiLanguage.t('معاينة النص المستخرج','Extracted text preview')),
       content:SizedBox(width:500,child:SingleChildScrollView(
         child:SelectableText(TextPreparation.preview(text,maxLength:3000)))),
-      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))],
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(UiLanguage.t('إغلاق','Close')))],
     ));
   }
   void cleanImportedText() => setState(() {
@@ -337,7 +337,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         const SizedBox(height:16),
         Card(child:Padding(padding:const EdgeInsets.all(12),
           child:Row(children:[Icon(Icons.phonelink_off),SizedBox(width:8),
-            Expanded(child:Text('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة'))]))),
+            Expanded(child:Text(UiLanguage.t('وضع محلي فقط — لا خوادم ولا خدمات ترجمة مدفوعة','Offline only — no servers or paid translation services')))]))),
         OutlinedButton.icon(onPressed:busy?null:download,
           icon:const Icon(Icons.download),label:Text(UiLanguage.t('تنزيل العربية والإنجليزية','Download Arabic and English'))),
         Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
@@ -356,14 +356,14 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
               source=values.first;target=source=='ar'?'en':'ar';output='';
             }),
           ),
-          Text('المحدد: ${source=='ar'?'العربية إلى الإنجليزية':'الإنجليزية إلى العربية'}'),
+          Text(UiLanguage.t('المحدد: ${source=='ar'?'العربية إلى الإنجليزية':'الإنجليزية إلى العربية'}','Selected: ${source=='ar'?'Arabic → English':'English → Arabic'}')),
         ]))),
         const SizedBox(height:16),
         TextField(controller:input,minLines:3,maxLines:6,
           decoration:InputDecoration(border:const OutlineInputBorder(),labelText:UiLanguage.t('٢. النص المراد ترجمته — مطلوب','2. Enter text — Required'))),
         if(input.text.trim().isNotEmpty)Padding(
           padding:const EdgeInsets.symmetric(vertical:6),
-          child:Text('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}')),
+          child:Text(UiLanguage.t('عدد الكلمات: ${TextPreparation.wordCount(input.text)} — عدد الأحرف: ${input.text.length}','Words: ${TextPreparation.wordCount(input.text)} — Characters: ${input.text.length}'))),
         Card(child:ExpansionTile(
           leading:const Icon(Icons.widgets_outlined),
           title:Text(UiLanguage.t('مصادر النص والأدوات','Text sources and tools')),
@@ -406,26 +406,26 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         if(hasTranslation)Card(child:Padding(padding:const EdgeInsets.all(16),
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             Row(children:[
-              Expanded(child:Text('النص الأصلي (${source=='ar'?'العربية':'English'})',
+              Expanded(child:Text(UiLanguage.t('النص الأصلي (${source=='ar'?'العربية':'English'})','Original text (${source=='ar'?'Arabic':'English'})'),
                 style:Theme.of(context).textTheme.titleSmall)),
-              IconButton(tooltip:'استمع إلى النص الأصلي',
+              IconButton(tooltip:UiLanguage.t('استمع إلى النص الأصلي','Listen to source text'),
                 onPressed:()=>speakText(input.text,source),
                 icon:const Icon(Icons.volume_up_outlined)),
             ]),
             SelectableText(input.text),
             const Divider(height:24),
             Row(children:[
-              Expanded(child:Text('الترجمة (${target=='ar'?'العربية':'English'})',
+              Expanded(child:Text(UiLanguage.t('الترجمة (${target=='ar'?'العربية':'English'})','Translation (${target=='ar'?'Arabic':'English'})'),
                 style:Theme.of(context).textTheme.titleSmall)),
-              IconButton(tooltip:'استمع إلى الترجمة',
+              IconButton(tooltip:UiLanguage.t('استمع إلى الترجمة','Listen to translation'),
                 onPressed:()=>speakText(output,target),
                 icon:const Icon(Icons.volume_up_outlined)),
             ]),
             SelectableText(output),
             Wrap(children:[
-              IconButton(tooltip:'نسخ',onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
-              IconButton(tooltip:'نسخ النص والترجمة معًا',onPressed:shareTranslation,icon:const Icon(Icons.content_copy)),
-              IconButton(tooltip:'حفظ في المفضلة',onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
+              IconButton(tooltip:UiLanguage.t('نسخ','Copy'),onPressed:()=>Clipboard.setData(ClipboardData(text:output)),icon:const Icon(Icons.copy)),
+              IconButton(tooltip:UiLanguage.t('نسخ النص والترجمة معًا','Copy original and translation'),onPressed:shareTranslation,icon:const Icon(Icons.content_copy)),
+              IconButton(tooltip:UiLanguage.t('حفظ في المفضلة','Save to favorites'),onPressed:()=>SavedTranslations.add('$source → $target | ${input.text} | $output',favorite:true),icon:const Icon(Icons.favorite_border)),
             ]),
           ]))),
         const Divider(),
