@@ -25,7 +25,7 @@ void main() {
         scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('Offline translation'));
     await tester.pumpAndSettle();
-    expect(find.text('Aidict • المترجم'), findsOneWidget);
-    expect(find.text('ترجم، تعلّم، وتحدث'), findsOneWidget);
+    expect(find.text('Aidict • Translator'), findsOneWidget);
+    expect(find.text('Translate, learn and speak'), findsOneWidget);
   });
 }
