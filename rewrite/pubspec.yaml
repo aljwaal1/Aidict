@@ -31,5 +31,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/jordanian_words.json
     - assets/tessdata_config.json
     - assets/tessdata/

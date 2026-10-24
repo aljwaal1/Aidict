@@ -1,4 +1,6 @@
 import 'contextual_translation.dart';
+import 'jordanian_dictionary.dart';
+import 'translation_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
@@ -238,6 +240,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   String inputSource='type';
   @override void initState(){
     _refreshModels();
+    _loadJordanianWords();
     tts.awaitSpeakCompletion(false);
     super.initState(); input.addListener(_refreshInputStats);
     WidgetsBinding.instance.addPostFrameCallback((_){
@@ -274,6 +277,19 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   String _translatedInput='';
   bool get hasTranslation => output.trim().isNotEmpty;
   String dictionaryQuery='';
+  Map<String, String> jordanianWords=const {};
+  final translationMemory=TranslationMemory(maxEntries: 120);
+  Future<void> _loadJordanianWords() async {
+    try {
+      final loaded=await JordanianDictionary.load();
+      if(mounted)setState(()=>jordanianWords=loaded);
+    } catch (_) {
+      // Keep the original built-in dictionary usable if the asset is missing.
+    }
+  }
+  List<MapEntry<String,String>> get dictionaryMatches =>
+      JordanianDictionary.search(dictionaryQuery,jordanianWords,
+          fallback:words,limit:12);
   String source='ar',target='en',output='',message='';
   Future<void> _refreshModels() async {
     try {
@@ -306,17 +322,20 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
     if(!await manager.isModelDownloaded(src) || !await manager.isModelDownloaded(dst)) {
       throw StateError('نزّل نموذجي اللغة أولًا');
     }
-    final t=OnDeviceTranslator(
-      sourceLanguage:src=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
-      targetLanguage:dst=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
+    OnDeviceTranslator? translator;
     try {
       final parts = ContextualTranslation.planWithParagraphs(text, maxBytes: 2500);
       final translated = <String>[];
       for (final part in parts) {
-        translated.add(await t.translateText(part.text));
+        translated.add(await translationMemory.translate(src,dst,part.text,() async {
+          translator ??= OnDeviceTranslator(
+            sourceLanguage:src=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
+            targetLanguage:dst=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
+          return translator!.translateText(part.text);
+        }));
       }
       return ContextualTranslation.finishWithParagraphs(parts, translated);
-    } finally {await t.close();}
+    } finally {await translator?.close();}
   }
   Future<void> openSavedTranslations(bool favorites) async {
     final selected=await Navigator.push<String>(context,MaterialPageRoute<String>(
@@ -563,7 +582,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
         ExpansionTile(title:Text(UiLanguage.t('قاموس عربي–إنجليزي','Arabic–English dictionary')),children:[
           TextField(onChanged:(v)=>setState(()=>dictionaryQuery=v),decoration:const InputDecoration(hintText:'ابحث عن كلمة',border:OutlineInputBorder())),
           if(dictionaryQuery.trim().isNotEmpty)
-            ...searchWords(dictionaryQuery,limit:12).map((entry)=>ListTile(
+            ...dictionaryMatches.map((entry)=>ListTile(
               title:Text(entry.key),subtitle:Text(entry.value),
               onTap:()=>setState((){
                 input.text=entry.key;
@@ -573,7 +592,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
                 message='تم اختيار الكلمة من القاموس';
               }),
             )),
-          if(dictionaryQuery.trim().isNotEmpty&&searchWords(dictionaryQuery).isEmpty)
+          if(dictionaryQuery.trim().isNotEmpty&&dictionaryMatches.isEmpty)
             Padding(padding:const EdgeInsets.all(12),
               child:Text(UiLanguage.t('لا توجد نتائج في القاموس المحلي المصغر.','No matches in the offline dictionary.'))),
         ]),
