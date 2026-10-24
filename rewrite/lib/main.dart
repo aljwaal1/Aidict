@@ -1,3 +1,4 @@
+import 'contextual_translation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
@@ -310,12 +311,12 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       sourceLanguage:src=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
       targetLanguage:dst=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
     try {
-      final parts = TranslationChunks.split(text, maxBytes: 2500);
+      final parts = ContextualTranslation.plan(text, maxBytes: 2500);
       final translated = <String>[];
       for (final part in parts) {
         translated.add(await t.translateText(part));
       }
-      return translated.join('\n');
+      return ContextualTranslation.finish(translated);
     } finally {await t.close();}
   }
   Future<void> openSavedTranslations(bool favorites) async {
