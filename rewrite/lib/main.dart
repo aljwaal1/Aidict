@@ -310,12 +310,12 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
       sourceLanguage:src=='ar'?TranslateLanguage.arabic:TranslateLanguage.english,
       targetLanguage:dst=='ar'?TranslateLanguage.arabic:TranslateLanguage.english);
     try {
-      final parts = ContextualTranslation.plan(text, maxBytes: 2500);
+      final parts = ContextualTranslation.planWithParagraphs(text, maxBytes: 2500);
       final translated = <String>[];
       for (final part in parts) {
-        translated.add(await t.translateText(part));
+        translated.add(await t.translateText(part.text));
       }
-      return ContextualTranslation.finish(translated);
+      return ContextualTranslation.finishWithParagraphs(parts, translated);
     } finally {await t.close();}
   }
   Future<void> openSavedTranslations(bool favorites) async {
