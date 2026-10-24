@@ -46,6 +46,6 @@ class ContextualTranslation {
       translatedParagraphs.map((part) => part.trim())
         .where((part) => part.isNotEmpty)
         .join('\n\n')
-        .replaceAll(RegExp(r'[ \t]+([،,؛;.!?؟])'), r'$1')
+        .replaceAllMapped(RegExp(r'[ \t]+([،,؛;.!?؟])'), (match) => match.group(1)!)
         .trim();
 }
