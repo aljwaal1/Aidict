@@ -2,7 +2,6 @@ import 'contextual_translation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'translation_policy.dart';
-import 'translation_chunks.dart';
 import 'extra_features.dart';
 import 'image_text_reader.dart';
 import 'document_text_reader_v2.dart';
